@@ -60,22 +60,6 @@
     border-radius: 999px;
   }
   .porcentaje { margin-top: 10px; font-weight: 600; }
-  nav.acciones {
-    margin-top: 28px;
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  nav.acciones a {
-    text-decoration: none;
-    background: var(--celeste);
-    color: white;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: 600;
-  }
-  nav.acciones a:hover { background: var(--azul); }
   footer {
     text-align: center;
     padding: 18px;
@@ -98,15 +82,11 @@
         <div class="barra-relleno" id="barra"></div>
       </div>
       <div class="porcentaje" id="porcentaje">0%</div>
-
-      <nav class="acciones">
-        <a href="/admin.html">Ingresar como administrador</a>
-      </nav>
     </section>
   </main>
 
   <footer>
-    Conteo actualizado en tiempo real a partir de las actas cargadas por los administradores registrados.
+    Conteo actualizado en tiempo real a partir de las actas cargadas por los usuarios registrados.
   </footer>
 
 <script>
@@ -132,7 +112,7 @@
   }
 
   actualizarContador();
-  setInterval(actualizarContador, 15000); // refresca cada 15 segundos
+  setInterval(actualizarContador, 15000);
 </script>
 </body>
 </html>

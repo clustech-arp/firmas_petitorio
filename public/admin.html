@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Panel de administrador · Un Millón de Firmas</title>
+<title>Panel · Un Millón de Firmas</title>
 <style>
   :root { --azul: #1d3557; --celeste: #457b9d; --claro: #f1faee; --acento: #e63946; --verde: #2a9d8f; }
   * { box-sizing: border-box; }
@@ -28,10 +28,11 @@
   .salir { background:none; border:none; color: var(--acento); font-weight:700; cursor:pointer; padding:0; margin-top:0; text-decoration: underline; }
   .oculto { display:none; }
   .subtotal { margin-top:10px; font-weight:700; color: var(--azul); }
+  select { width:100%; padding:10px 12px; border:1px solid #ccc; border-radius:8px; font-size:1rem; }
 </style>
 </head>
 <body>
-  <header><h1>Panel de administrador · Un Millón de Firmas por la Universidad Pública</h1></header>
+  <header><h1>Panel · Un Millón de Firmas por la Universidad Pública</h1></header>
   <main>
 
     <!-- LOGIN -->
@@ -48,7 +49,7 @@
       </p>
     </section>
 
-    <!-- PANEL ADMIN (oculto hasta loguearse) -->
+    <!-- PANEL LOGUEADO -->
     <div id="zona-logueada" class="oculto">
 
       <section class="panel">
@@ -56,9 +57,23 @@
         <button class="salir" onclick="cerrarSesion()">Cerrar sesión</button>
       </section>
 
+      <!-- Cambiar contraseña (visible para todos) -->
       <section class="panel">
+        <h2>Cambiar contraseña</h2>
+        <label for="clave-actual">Clave actual</label>
+        <input id="clave-actual" type="password">
+        <label for="clave-nueva">Nueva clave</label>
+        <input id="clave-nueva" type="password">
+        <label for="clave-nueva2">Repetir nueva clave</label>
+        <input id="clave-nueva2" type="password">
+        <button class="secundario" onclick="cambiarClave()">Actualizar clave</button>
+        <div class="mensaje" id="clave-mensaje"></div>
+      </section>
+
+      <!-- Solo para usuarios (rol: usuario) -->
+      <section class="panel oculto" id="panel-usuario">
         <h2>Cargar acta</h2>
-        <p style="font-size:0.9rem; color:var(--celeste);">El número de acta es propio de tu cuenta: no podés repetir un número que ya cargaste, pero otros administradores sí pueden usar el mismo número.</p>
+        <p style="font-size:0.9rem; color:var(--celeste);">No podés repetir un número de acta que ya cargaste, pero otros usuarios sí pueden usar el mismo número.</p>
         <label for="acta-numero">Número de acta</label>
         <input id="acta-numero" type="text" placeholder="Ej: 001/2026">
         <label for="acta-cantidad">Cantidad de firmantes</label>
@@ -67,33 +82,28 @@
         <div class="mensaje" id="acta-mensaje"></div>
       </section>
 
-      <section class="panel">
+      <section class="panel oculto" id="panel-mis-actas">
         <h2>Mis actas cargadas</h2>
         <div id="lista-actas">Cargando…</div>
         <div class="subtotal" id="subtotal"></div>
       </section>
 
-      <!-- Solo visible para superadmin -->
-      <section class="panel oculto" id="panel-superadmin">
-        <h2>Ajustar meta general (solo super-administrador)</h2>
-        <label for="meta-nueva">Nueva meta de firmas</label>
-        <input id="meta-nueva" type="number" min="1" step="1" placeholder="Ej: 1000000">
-        <button class="secundario" onclick="ajustarMeta()">Actualizar meta</button>
-        <div class="mensaje" id="meta-mensaje"></div>
-
-        <h2 style="margin-top:28px;">Crear nuevo administrador</h2>
+      <!-- Solo para administradores (rol: administrador) -->
+      <section class="panel oculto" id="panel-administrador">
+        <h2>Crear nuevo usuario</h2>
         <label for="nuevo-usuario">Usuario</label>
         <input id="nuevo-usuario" type="text">
         <label for="nuevo-clave">Clave</label>
         <input id="nuevo-clave" type="password">
         <label for="nuevo-rol">Rol</label>
-        <select id="nuevo-rol" style="width:100%; padding:10px 12px; border:1px solid #ccc; border-radius:8px; font-size:1rem;">
-          <option value="admin">Administrador</option>
-          <option value="superadmin">Super-administrador</option>
+        <select id="nuevo-rol">
+          <option value="usuario">Usuario</option>
+          <option value="administrador">Administrador</option>
         </select>
-        <button class="secundario" onclick="crearAdministrador()">Crear cuenta</button>
+        <button class="secundario" onclick="crearUsuario()">Crear cuenta</button>
         <div class="mensaje" id="crear-mensaje"></div>
       </section>
+
     </div>
   </main>
 
@@ -143,6 +153,34 @@
     }
   }
 
+  async function cambiarClave() {
+    const password_actual = document.getElementById('clave-actual').value;
+    const password_nueva = document.getElementById('clave-nueva').value;
+    const password_nueva2 = document.getElementById('clave-nueva2').value;
+    if (!password_actual || !password_nueva || !password_nueva2) {
+      mostrarMensaje('clave-mensaje', 'Completá todos los campos.', 'error'); return;
+    }
+    if (password_nueva !== password_nueva2) {
+      mostrarMensaje('clave-mensaje', 'Las nuevas claves no coinciden.', 'error'); return;
+    }
+    try {
+      const resp = await fetch('/api/password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + obtenerToken() },
+        body: JSON.stringify({ password_actual, password_nueva })
+      });
+      const datos = await resp.json();
+      if (!resp.ok) { mostrarMensaje('clave-mensaje', datos.error || 'No se pudo cambiar la clave.', 'error'); return; }
+      mostrarMensaje('clave-mensaje', 'Clave actualizada correctamente. Volvé a iniciar sesión.', 'ok');
+      document.getElementById('clave-actual').value = '';
+      document.getElementById('clave-nueva').value = '';
+      document.getElementById('clave-nueva2').value = '';
+      setTimeout(cerrarSesion, 2000);
+    } catch (e) {
+      mostrarMensaje('clave-mensaje', 'Error de conexión con el servidor.', 'error');
+    }
+  }
+
   async function cargarActa() {
     const numero_acta = document.getElementById('acta-numero').value.trim();
     const cantidad_firmantes = parseInt(document.getElementById('acta-cantidad').value, 10);
@@ -178,29 +216,13 @@
         html += '</table>';
         document.getElementById('lista-actas').innerHTML = html;
       }
-      document.getElementById('subtotal').textContent = `Subtotal cargado por vos: ${datos.subtotal.toLocaleString('es-AR')} firmas`;
+      document.getElementById('subtotal').textContent = `Subtotal: ${datos.subtotal.toLocaleString('es-AR')} firmas`;
     } catch (e) {
       document.getElementById('lista-actas').textContent = 'Error de conexión con el servidor.';
     }
   }
 
-  async function ajustarMeta() {
-    const meta = parseInt(document.getElementById('meta-nueva').value, 10);
-    try {
-      const resp = await fetch('/api/meta', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + obtenerToken() },
-        body: JSON.stringify({ meta })
-      });
-      const datos = await resp.json();
-      if (!resp.ok) { mostrarMensaje('meta-mensaje', datos.error || 'No se pudo actualizar la meta.', 'error'); return; }
-      mostrarMensaje('meta-mensaje', `Meta actualizada a ${datos.meta.toLocaleString('es-AR')} firmas.`, 'ok');
-    } catch (e) {
-      mostrarMensaje('meta-mensaje', 'Error de conexión con el servidor.', 'error');
-    }
-  }
-
-  async function crearAdministrador() {
+  async function crearUsuario() {
     const username = document.getElementById('nuevo-usuario').value.trim();
     const password = document.getElementById('nuevo-clave').value;
     const rol = document.getElementById('nuevo-rol').value;
@@ -212,7 +234,7 @@
       });
       const datos = await resp.json();
       if (!resp.ok) { mostrarMensaje('crear-mensaje', datos.error || 'No se pudo crear la cuenta.', 'error'); return; }
-      mostrarMensaje('crear-mensaje', 'Administrador creado correctamente.', 'ok');
+      mostrarMensaje('crear-mensaje', 'Cuenta creada correctamente.', 'ok');
       document.getElementById('nuevo-usuario').value = '';
       document.getElementById('nuevo-clave').value = '';
     } catch (e) {
@@ -220,7 +242,6 @@
     }
   }
 
-  // Inicialización: ¿hay sesión guardada?
   (function init() {
     const token = obtenerToken();
     const datosUsuario = obtenerDatos();
@@ -228,11 +249,16 @@
       document.getElementById('panel-login').classList.add('oculto');
       document.getElementById('zona-logueada').classList.remove('oculto');
       document.getElementById('nombre-usuario').textContent = datosUsuario.username;
-      document.getElementById('etiqueta-rol').textContent = datosUsuario.rol === 'superadmin' ? '(super-administrador)' : '(administrador)';
-      if (datosUsuario.rol === 'superadmin') {
-        document.getElementById('panel-superadmin').classList.remove('oculto');
+      document.getElementById('etiqueta-rol').textContent =
+        datosUsuario.rol === 'administrador' ? '(administrador)' : '(usuario)';
+
+      if (datosUsuario.rol === 'usuario') {
+        document.getElementById('panel-usuario').classList.remove('oculto');
+        document.getElementById('panel-mis-actas').classList.remove('oculto');
+        cargarListaActas();
+      } else if (datosUsuario.rol === 'administrador') {
+        document.getElementById('panel-administrador').classList.remove('oculto');
       }
-      cargarListaActas();
     }
   })();
 </script>

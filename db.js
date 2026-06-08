@@ -2,11 +2,6 @@ const { createClient } = require('@libsql/client');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 
-// Conexion a la base de datos:
-// - En produccion con Turso: configurar TURSO_DATABASE_URL y TURSO_AUTH_TOKEN
-//   (ver README para el paso a paso). Es gratis y los datos persisten en la nube.
-// - En desarrollo local, si esas variables no estan, se usa un archivo SQLite local
-//   (configurable con DB_PATH, o "firmas.db" en la carpeta del proyecto por defecto).
 const archivoLocal = process.env.DB_PATH || path.join(__dirname, 'firmas.db');
 const url = process.env.TURSO_DATABASE_URL || `file:${archivoLocal}`;
 const authToken = process.env.TURSO_AUTH_TOKEN || undefined;
@@ -19,7 +14,7 @@ async function inicializar() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
-      rol TEXT NOT NULL DEFAULT 'admin',
+      rol TEXT NOT NULL DEFAULT 'usuario',
       creado_en TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
@@ -53,14 +48,33 @@ async function inicializar() {
     });
   }
 
-  const superadmin = await db.execute({
-    sql: "SELECT id FROM administradores WHERE rol = 'superadmin'",
+  // Migrar roles viejos si existen
+  await db.execute("UPDATE administradores SET rol = 'administrador' WHERE rol = 'superadmin'");
+  await db.execute("UPDATE administradores SET rol = 'usuario' WHERE rol = 'admin'");
+
+  // Crear cuenta mapadres si no existe
+  const mapadres = await db.execute({
+    sql: "SELECT id FROM administradores WHERE username = 'mapadres'",
     args: []
   });
-  if (superadmin.rows.length === 0) {
+  if (mapadres.rows.length === 0) {
+    const hash = bcrypt.hashSync('quefestival!', 10);
+    await db.execute({
+      sql: "INSERT INTO administradores (username, password_hash, rol) VALUES (?, ?, 'administrador')",
+      args: ['mapadres', hash]
+    });
+    console.log('Cuenta mapadres creada con rol administrador');
+  }
+
+  // Crear cuenta superadmin inicial si no hay ningun administrador
+  const admins = await db.execute({
+    sql: "SELECT id FROM administradores WHERE rol = 'administrador'",
+    args: []
+  });
+  if (admins.rows.length === 0) {
     const hash = bcrypt.hashSync('cambiar123', 10);
     await db.execute({
-      sql: "INSERT INTO administradores (username, password_hash, rol) VALUES (?, ?, 'superadmin')",
+      sql: "INSERT INTO administradores (username, password_hash, rol) VALUES (?, ?, 'administrador')",
       args: ['superadmin', hash]
     });
     console.log('Cuenta superadmin creada: usuario "superadmin", clave "cambiar123" (cambiarla luego de iniciar sesion)');

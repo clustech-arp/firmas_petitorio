@@ -28,8 +28,8 @@ function requiereAuth(req, res, next) {
   }
 }
 
-function requiereSuperAdmin(req, res, next) {
-  if (req.admin?.rol !== 'superadmin') return res.status(403).json({ error: 'Requiere permisos de super-administrador' });
+function requiereAdministrador(req, res, next) {
+  if (req.admin?.rol !== 'administrador') return res.status(403).json({ error: 'Requiere permisos de administrador' });
   next();
 }
 
@@ -68,23 +68,30 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// ---------- Rutas de administrador (requieren login) ----------
+// ---------- Rutas autenticadas ----------
 
-app.post('/api/administradores', requiereAuth, requiereSuperAdmin, async (req, res) => {
-  const { username, password, rol } = req.body || {};
-  if (!username || !password) return res.status(400).json({ error: 'Usuario y clave son obligatorios' });
-  const rolFinal = rol === 'superadmin' ? 'superadmin' : 'admin';
+app.put('/api/password', requiereAuth, async (req, res) => {
+  const { password_actual, password_nueva } = req.body || {};
+  if (!password_actual || !password_nueva) return res.status(400).json({ error: 'Completa todos los campos' });
+  if (password_nueva.length < 6) return res.status(400).json({ error: 'La nueva clave debe tener al menos 6 caracteres' });
   try {
-    const hash = bcrypt.hashSync(password, 10);
-    await db.execute({
-      sql: "INSERT INTO administradores (username, password_hash, rol) VALUES (?, ?, ?)",
-      args: [username, hash, rolFinal]
+    const resultado = await db.execute({
+      sql: 'SELECT password_hash FROM administradores WHERE id = ?',
+      args: [req.admin.id]
     });
-    res.status(201).json({ ok: true });
+    const admin = resultado.rows[0];
+    if (!admin || !bcrypt.compareSync(password_actual, admin.password_hash)) {
+      return res.status(401).json({ error: 'La clave actual es incorrecta' });
+    }
+    const hash = bcrypt.hashSync(password_nueva, 10);
+    await db.execute({
+      sql: 'UPDATE administradores SET password_hash = ? WHERE id = ?',
+      args: [hash, req.admin.id]
+    });
+    res.json({ ok: true });
   } catch (e) {
-    if (String(e.message || e).includes('UNIQUE')) return res.status(409).json({ error: 'Ese nombre de usuario ya existe' });
     console.error(e);
-    res.status(500).json({ error: 'Error al crear el administrador' });
+    res.status(500).json({ error: 'Error al cambiar la clave' });
   }
 });
 
@@ -128,9 +135,27 @@ app.get('/api/actas', requiereAuth, async (req, res) => {
   }
 });
 
-// ---------- Rutas de super-administrador ----------
+// ---------- Rutas de administrador ----------
 
-app.put('/api/meta', requiereAuth, requiereSuperAdmin, async (req, res) => {
+app.post('/api/administradores', requiereAuth, requiereAdministrador, async (req, res) => {
+  const { username, password, rol } = req.body || {};
+  if (!username || !password) return res.status(400).json({ error: 'Usuario y clave son obligatorios' });
+  const rolFinal = rol === 'administrador' ? 'administrador' : 'usuario';
+  try {
+    const hash = bcrypt.hashSync(password, 10);
+    await db.execute({
+      sql: "INSERT INTO administradores (username, password_hash, rol) VALUES (?, ?, ?)",
+      args: [username, hash, rolFinal]
+    });
+    res.status(201).json({ ok: true });
+  } catch (e) {
+    if (String(e.message || e).includes('UNIQUE')) return res.status(409).json({ error: 'Ese nombre de usuario ya existe' });
+    console.error(e);
+    res.status(500).json({ error: 'Error al crear el usuario' });
+  }
+});
+
+app.put('/api/meta', requiereAuth, requiereAdministrador, async (req, res) => {
   const meta = parseInt(req.body?.meta, 10);
   if (!Number.isInteger(meta) || meta <= 0) {
     return res.status(400).json({ error: 'La meta debe ser un numero entero mayor a 0' });
@@ -151,7 +176,7 @@ app.put('/api/meta', requiereAuth, requiereSuperAdmin, async (req, res) => {
 inicializar()
   .then(() => {
     app.listen(PORT, () => {
-      console.log('Servidor de Un Millon de Firmas por la Universidad Publica corriendo en http://localhost:' + PORT);
+      console.log('Servidor corriendo en http://localhost:' + PORT);
     });
   })
   .catch((e) => {
