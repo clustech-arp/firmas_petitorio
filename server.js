@@ -34,8 +34,6 @@ function requiereAdministrador(req, res, next) {
   next();
 }
 
-// Normaliza numero de acta: si es puramente numerico elimina ceros a la izquierda
-// Ejemplos: "03" -> "3", "003" -> "3", "001/2026" -> "001/2026" (sin cambio)
 function normalizarNumeroActa(s) {
   if (/^\d+$/.test(s)) return String(parseInt(s, 10));
   return s;
@@ -92,7 +90,7 @@ app.put('/api/password', requiereAuth, async (req, res) => {
     }
     const hash = bcrypt.hashSync(password_nueva, 10);
     await db.execute({
-      sql: 'UPDATE administradores SET password_hash = ? WHERE id = ?',
+      sql: 'UPDATE administradores SET password_hash = ?, password_visible = NULL WHERE id = ?',
       args: [hash, req.admin.id]
     });
     res.json({ ok: true });
@@ -145,20 +143,31 @@ app.get('/api/actas', requiereAuth, async (req, res) => {
 // ---------- Rutas de administrador ----------
 
 app.post('/api/administradores', requiereAuth, requiereAdministrador, async (req, res) => {
-  const { username, password, rol } = req.body || {};
+  const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: 'Usuario y clave son obligatorios' });
-  const rolFinal = rol === 'administrador' ? 'administrador' : 'usuario';
   try {
     const hash = bcrypt.hashSync(password, 10);
     await db.execute({
-      sql: "INSERT INTO administradores (username, password_hash, rol) VALUES (?, ?, ?)",
-      args: [username, hash, rolFinal]
+      sql: "INSERT INTO administradores (username, password_hash, password_visible, rol) VALUES (?, ?, ?, 'usuario')",
+      args: [username, hash, password]
     });
     res.status(201).json({ ok: true });
   } catch (e) {
     if (String(e.message || e).includes('UNIQUE')) return res.status(409).json({ error: 'Ese nombre de usuario ya existe' });
     console.error(e);
     res.status(500).json({ error: 'Error al crear el usuario' });
+  }
+});
+
+app.get('/api/usuarios', requiereAuth, requiereAdministrador, async (req, res) => {
+  try {
+    const resultado = await db.execute(
+      "SELECT username, password_visible, creado_en FROM administradores WHERE rol = 'usuario' ORDER BY creado_en ASC"
+    );
+    res.json({ usuarios: resultado.rows });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Error al obtener los usuarios' });
   }
 });
 

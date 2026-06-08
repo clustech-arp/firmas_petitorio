@@ -14,10 +14,16 @@ async function inicializar() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
+      password_visible TEXT,
       rol TEXT NOT NULL DEFAULT 'usuario',
       creado_en TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
+
+  // Migracion: agregar columna password_visible si no existe
+  try {
+    await db.execute("ALTER TABLE administradores ADD COLUMN password_visible TEXT");
+  } catch (e) { /* ya existe, ignorar */ }
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS actas (
@@ -48,7 +54,7 @@ async function inicializar() {
     });
   }
 
-  // Migrar roles viejos si existen
+  // Migrar roles viejos
   await db.execute("UPDATE administradores SET rol = 'administrador' WHERE rol = 'superadmin'");
   await db.execute("UPDATE administradores SET rol = 'usuario' WHERE rol = 'admin'");
 
@@ -66,7 +72,7 @@ async function inicializar() {
     console.log('Cuenta mapadres creada con rol administrador');
   }
 
-  // Crear cuenta superadmin inicial si no hay ningun administrador
+  // Cuenta inicial si no hay ningun administrador
   const admins = await db.execute({
     sql: "SELECT id FROM administradores WHERE rol = 'administrador'",
     args: []
@@ -77,7 +83,7 @@ async function inicializar() {
       sql: "INSERT INTO administradores (username, password_hash, rol) VALUES (?, ?, 'administrador')",
       args: ['superadmin', hash]
     });
-    console.log('Cuenta superadmin creada: usuario "superadmin", clave "cambiar123" (cambiarla luego de iniciar sesion)');
+    console.log('Cuenta superadmin creada: usuario "superadmin", clave "cambiar123"');
   }
 }
 

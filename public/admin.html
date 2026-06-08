@@ -28,7 +28,7 @@
   .salir { background:none; border:none; color: var(--acento); font-weight:700; cursor:pointer; padding:0; margin-top:0; text-decoration: underline; }
   .oculto { display:none; }
   .subtotal { margin-top:10px; font-weight:700; color: var(--azul); }
-  select { width:100%; padding:10px 12px; border:1px solid #ccc; border-radius:8px; font-size:1rem; }
+  .clave-modificada { color: #aaa; font-style: italic; }
 </style>
 </head>
 <body>
@@ -82,16 +82,14 @@
         <input id="nuevo-usuario" type="text">
         <label for="nuevo-clave">Clave</label>
         <input id="nuevo-clave" type="password">
-        <label for="nuevo-rol">Rol</label>
-        <select id="nuevo-rol">
-          <option value="usuario">Usuario</option>
-          <option value="administrador">Administrador</option>
-        </select>
         <button class="secundario" onclick="crearUsuario()">Crear cuenta</button>
         <div class="mensaje" id="crear-mensaje"></div>
+
+        <h2 style="margin-top:28px;">Usuarios registrados</h2>
+        <div id="lista-usuarios">Cargando…</div>
       </section>
 
-      <!-- Cambiar contraseña (visible para todos, al final) -->
+      <!-- Cambiar contraseña (al final, visible para todos) -->
       <section class="panel">
         <h2>Cambiar contraseña</h2>
         <label for="clave-actual">Clave actual</label>
@@ -106,6 +104,8 @@
 
     </div>
   </main>
+
+<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.1</div>
 
 <script>
   const TOKEN_KEY = 'firmas_token';
@@ -135,8 +135,7 @@
     const username = document.getElementById('login-usuario').value.trim();
     const password = document.getElementById('login-clave').value;
     if (!username || !password) {
-      mostrarMensaje('login-mensaje', 'Completá usuario y clave.', 'error');
-      return;
+      mostrarMensaje('login-mensaje', 'Completá usuario y clave.', 'error'); return;
     }
     try {
       const resp = await fetch('/api/login', {
@@ -171,7 +170,7 @@
       });
       const datos = await resp.json();
       if (!resp.ok) { mostrarMensaje('clave-mensaje', datos.error || 'No se pudo cambiar la clave.', 'error'); return; }
-      mostrarMensaje('clave-mensaje', 'Clave actualizada correctamente. Volvé a iniciar sesión.', 'ok');
+      mostrarMensaje('clave-mensaje', 'Clave actualizada. Volvé a iniciar sesión.', 'ok');
       document.getElementById('clave-actual').value = '';
       document.getElementById('clave-nueva').value = '';
       document.getElementById('clave-nueva2').value = '';
@@ -225,20 +224,46 @@
   async function crearUsuario() {
     const username = document.getElementById('nuevo-usuario').value.trim();
     const password = document.getElementById('nuevo-clave').value;
-    const rol = document.getElementById('nuevo-rol').value;
+    if (!username || !password) {
+      mostrarMensaje('crear-mensaje', 'Completá usuario y clave.', 'error'); return;
+    }
     try {
       const resp = await fetch('/api/administradores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + obtenerToken() },
-        body: JSON.stringify({ username, password, rol })
+        body: JSON.stringify({ username, password })
       });
       const datos = await resp.json();
       if (!resp.ok) { mostrarMensaje('crear-mensaje', datos.error || 'No se pudo crear la cuenta.', 'error'); return; }
       mostrarMensaje('crear-mensaje', 'Cuenta creada correctamente.', 'ok');
       document.getElementById('nuevo-usuario').value = '';
       document.getElementById('nuevo-clave').value = '';
+      cargarListaUsuarios();
     } catch (e) {
       mostrarMensaje('crear-mensaje', 'Error de conexión con el servidor.', 'error');
+    }
+  }
+
+  async function cargarListaUsuarios() {
+    try {
+      const resp = await fetch('/api/usuarios', { headers: { 'Authorization': 'Bearer ' + obtenerToken() } });
+      const datos = await resp.json();
+      if (!resp.ok) { document.getElementById('lista-usuarios').textContent = 'No se pudo cargar la lista.'; return; }
+      if (datos.usuarios.length === 0) {
+        document.getElementById('lista-usuarios').textContent = 'Todavía no hay usuarios registrados.';
+      } else {
+        let html = '<table><tr><th>Usuario</th><th>Clave</th></tr>';
+        for (const u of datos.usuarios) {
+          const clave = u.password_visible
+            ? u.password_visible
+            : '<span class="clave-modificada">modificada por el usuario</span>';
+          html += `<tr><td>${u.username}</td><td>${clave}</td></tr>`;
+        }
+        html += '</table>';
+        document.getElementById('lista-usuarios').innerHTML = html;
+      }
+    } catch (e) {
+      document.getElementById('lista-usuarios').textContent = 'Error de conexión con el servidor.';
     }
   }
 
@@ -258,10 +283,10 @@
         cargarListaActas();
       } else if (datosUsuario.rol === 'administrador') {
         document.getElementById('panel-administrador').classList.remove('oculto');
+        cargarListaUsuarios();
       }
     }
   })();
 </script>
-<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.0</div>
 </body>
 </html>
