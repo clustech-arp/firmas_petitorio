@@ -57,19 +57,6 @@
         <button class="salir" onclick="cerrarSesion()">Cerrar sesión</button>
       </section>
 
-      <!-- Cambiar contraseña (visible para todos) -->
-      <section class="panel">
-        <h2>Cambiar contraseña</h2>
-        <label for="clave-actual">Clave actual</label>
-        <input id="clave-actual" type="password">
-        <label for="clave-nueva">Nueva clave</label>
-        <input id="clave-nueva" type="password">
-        <label for="clave-nueva2">Repetir nueva clave</label>
-        <input id="clave-nueva2" type="password">
-        <button class="secundario" onclick="cambiarClave()">Actualizar clave</button>
-        <div class="mensaje" id="clave-mensaje"></div>
-      </section>
-
       <!-- Solo para usuarios (rol: usuario) -->
       <section class="panel oculto" id="panel-usuario">
         <h2>Cargar acta</h2>
@@ -102,6 +89,19 @@
         </select>
         <button class="secundario" onclick="crearUsuario()">Crear cuenta</button>
         <div class="mensaje" id="crear-mensaje"></div>
+      </section>
+
+      <!-- Cambiar contraseña (visible para todos, al final) -->
+      <section class="panel">
+        <h2>Cambiar contraseña</h2>
+        <label for="clave-actual">Clave actual</label>
+        <input id="clave-actual" type="password">
+        <label for="clave-nueva">Nueva clave</label>
+        <input id="clave-nueva" type="password">
+        <label for="clave-nueva2">Repetir nueva clave</label>
+        <input id="clave-nueva2" type="password">
+        <button class="secundario" onclick="cambiarClave()">Actualizar clave</button>
+        <div class="mensaje" id="clave-mensaje"></div>
       </section>
 
     </div>
