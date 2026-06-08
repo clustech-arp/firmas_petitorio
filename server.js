@@ -11,7 +11,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'cambiar-esta-clave-en-produccion';
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ---------- Auth helpers ----------
+// ---------- Helpers ----------
+
 function generarToken(admin) {
   return jwt.sign({ id: admin.id, username: admin.username, rol: admin.rol }, JWT_SECRET, { expiresIn: '12h' });
 }
@@ -33,6 +34,13 @@ function requiereAdministrador(req, res, next) {
   next();
 }
 
+// Normaliza numero de acta: si es puramente numerico elimina ceros a la izquierda
+// Ejemplos: "03" -> "3", "003" -> "3", "001/2026" -> "001/2026" (sin cambio)
+function normalizarNumeroActa(s) {
+  if (/^\d+$/.test(s)) return String(parseInt(s, 10));
+  return s;
+}
+
 // ---------- Rutas publicas ----------
 
 app.get('/api/total', async (req, res) => {
@@ -51,7 +59,6 @@ app.get('/api/total', async (req, res) => {
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: 'Usuario y clave son obligatorios' });
-
   try {
     const resultado = await db.execute({
       sql: 'SELECT * FROM administradores WHERE username = ?',
@@ -97,7 +104,7 @@ app.put('/api/password', requiereAuth, async (req, res) => {
 
 app.post('/api/actas', requiereAuth, async (req, res) => {
   const { numero_acta, cantidad_firmantes } = req.body || {};
-  const numero = String(numero_acta || '').trim();
+  const numero = normalizarNumeroActa(String(numero_acta || '').trim());
   const cantidad = parseInt(cantidad_firmantes, 10);
 
   if (!numero) return res.status(400).json({ error: 'El numero de acta es obligatorio' });
@@ -113,7 +120,7 @@ app.post('/api/actas', requiereAuth, async (req, res) => {
     res.status(201).json({ ok: true });
   } catch (e) {
     if (String(e.message || e).includes('UNIQUE')) {
-      return res.status(409).json({ error: `Ya cargaste el acta N ${numero}. No se puede repetir un numero de acta propio.` });
+      return res.status(409).json({ error: `Ya cargaste el acta N° ${numero}. No se puede repetir un numero de acta propio.` });
     }
     console.error(e);
     res.status(500).json({ error: 'Error al guardar el acta' });
