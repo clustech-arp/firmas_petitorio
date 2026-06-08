@@ -94,7 +94,12 @@
         <div id="lista-usuarios">Cargando…</div>
 
         <h3>Actas cargadas por usuario</h3>
-        <button class="exportar" onclick="exportarCSV()">Exportar CSV</button>
+        <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <select id="filtro-usuario" onchange="filtrarActas()" style="padding:8px 12px;border:1px solid #ccc;border-radius:8px;font-size:0.95rem;">
+            <option value="">Todos los usuarios</option>
+          </select>
+          <button class="exportar" style="margin-top:0;" onclick="exportarCSV()">Exportar CSV</button>
+        </div>
         <div id="lista-todas-actas" style="margin-top:14px;">Cargando…</div>
         <div class="total-actas" id="total-todas-actas"></div>
 
@@ -116,7 +121,7 @@
     </div>
   </main>
 
-<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.2</div>
+<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.3</div>
 
 <script>
   const TOKEN_KEY = 'firmas_token';
@@ -285,23 +290,39 @@
       const datos = await resp.json();
       if (!resp.ok) { document.getElementById('lista-todas-actas').textContent = 'No se pudo cargar.'; return; }
       _todasLasActas = datos.actas;
-      if (datos.actas.length === 0) {
-        document.getElementById('lista-todas-actas').textContent = 'Todavía no hay actas cargadas.';
-        document.getElementById('total-todas-actas').textContent = '';
-      } else {
-        let html = '<table><tr><th>Usuario</th><th>N° de acta</th><th>Firmantes</th><th>Fecha</th></tr>';
-        let total = 0;
-        for (const a of datos.actas) {
-          total += Number(a.cantidad_firmantes);
-          html += `<tr><td>${a.username}</td><td>${a.numero_acta}</td><td>${a.cantidad_firmantes}</td><td>${a.creado_en}</td></tr>`;
-        }
-        html += '</table>';
-        document.getElementById('lista-todas-actas').innerHTML = html;
-        document.getElementById('total-todas-actas').textContent = `Total general: ${total.toLocaleString('es-AR')} firmas`;
-      }
+      // Poblar filtro con usuarios unicos
+      const sel = document.getElementById('filtro-usuario');
+      const usuariosUnicos = [...new Set(datos.actas.map(a => a.username))].sort();
+      sel.innerHTML = '<option value="">Todos los usuarios</option>';
+      usuariosUnicos.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u; opt.textContent = u;
+        sel.appendChild(opt);
+      });
+      filtrarActas();
     } catch (e) {
       document.getElementById('lista-todas-actas').textContent = 'Error de conexión con el servidor.';
     }
+  }
+
+  function filtrarActas() {
+    const filtro = document.getElementById('filtro-usuario').value;
+    const actas = filtro ? _todasLasActas.filter(a => a.username === filtro) : _todasLasActas;
+    if (actas.length === 0) {
+      document.getElementById('lista-todas-actas').textContent = 'No hay actas para mostrar.';
+      document.getElementById('total-todas-actas').textContent = '';
+      return;
+    }
+    let html = '<table><tr><th>Usuario</th><th>N° de acta</th><th>Firmantes</th><th>Fecha</th></tr>';
+    let total = 0;
+    for (const a of actas) {
+      total += Number(a.cantidad_firmantes);
+      html += `<tr><td>${a.username}</td><td>${a.numero_acta}</td><td>${a.cantidad_firmantes}</td><td>${a.creado_en}</td></tr>`;
+    }
+    html += '</table>';
+    document.getElementById('lista-todas-actas').innerHTML = html;
+    const label = filtro ? `Subtotal ${filtro}` : 'Total general';
+    document.getElementById('total-todas-actas').textContent = `${label}: ${total.toLocaleString('es-AR')} firmas`;
   }
 
   function exportarCSV() {
