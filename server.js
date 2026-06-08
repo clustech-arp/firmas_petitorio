@@ -171,6 +171,21 @@ app.get('/api/usuarios', requiereAuth, requiereAdministrador, async (req, res) =
   }
 });
 
+app.get('/api/admin/actas', requiereAuth, requiereAdministrador, async (req, res) => {
+  try {
+    const resultado = await db.execute(
+      `SELECT a.username, ac.numero_acta, ac.cantidad_firmantes, ac.creado_en
+       FROM actas ac
+       JOIN administradores a ON a.id = ac.admin_id
+       ORDER BY a.username ASC, ac.creado_en DESC`
+    );
+    res.json({ actas: resultado.rows });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Error al obtener las actas' });
+  }
+});
+
 app.put('/api/meta', requiereAuth, requiereAdministrador, async (req, res) => {
   const meta = parseInt(req.body?.meta, 10);
   if (!Number.isInteger(meta) || meta <= 0) {
