@@ -129,7 +129,7 @@
     </div>
   </main>
 
-<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.10</div>
+<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.11</div>
 
 <script>
   const TOKEN_KEY = 'firmas_token';
@@ -256,7 +256,7 @@
       const resp = await fetch('/api/administradores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + obtenerToken() },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password, nombre_institucion: document.getElementById('nuevo-institucion').value.trim() })
       });
       const datos = await resp.json();
       if (!resp.ok) { mostrarMensaje('crear-mensaje', datos.error || 'No se pudo crear la cuenta.', 'error'); return; }
