@@ -36,7 +36,13 @@
 </style>
 </head>
 <body>
-  <header><h1>Panel · Un Millón de Firmas por la Universidad Pública</h1></header>
+  <header>
+    <div style="display:flex;justify-content:center;align-items:center;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
+      <img src="/MYP.jpg" alt="MYP" style="height:48px;object-fit:contain;border-radius:4px;">
+      <img src="/escmb.png" alt="ESCMB" style="height:48px;object-fit:contain;border-radius:4px;">
+    </div>
+    <h1>Panel · Un Millón de Firmas por la Universidad Pública</h1>
+  </header>
   <main>
 
     <!-- LOGIN -->
@@ -87,6 +93,8 @@
         <input id="nuevo-usuario" type="text">
         <label for="nuevo-clave">Clave</label>
         <input id="nuevo-clave" type="password">
+        <label for="nuevo-institucion">Nombre institucional</label>
+        <input id="nuevo-institucion" type="text" placeholder="Ej: Universidad Nacional de Córdoba">
         <button class="secundario" onclick="crearUsuario()">Crear cuenta</button>
         <div class="mensaje" id="crear-mensaje"></div>
 
@@ -121,7 +129,7 @@
     </div>
   </main>
 
-<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.3</div>
+<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.10</div>
 
 <script>
   const TOKEN_KEY = 'firmas_token';
@@ -158,7 +166,7 @@
       const resp = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password, nombre_institucion: document.getElementById('nuevo-institucion').value.trim() })
       });
       const datos = await resp.json();
       if (!resp.ok) { mostrarMensaje('login-mensaje', datos.error || 'No se pudo iniciar sesión.', 'error'); return; }
@@ -255,6 +263,7 @@
       mostrarMensaje('crear-mensaje', 'Cuenta creada correctamente.', 'ok');
       document.getElementById('nuevo-usuario').value = '';
       document.getElementById('nuevo-clave').value = '';
+      document.getElementById('nuevo-institucion').value = '';
       cargarListaUsuarios();
     } catch (e) {
       mostrarMensaje('crear-mensaje', 'Error de conexión con el servidor.', 'error');
@@ -269,12 +278,13 @@
       if (datos.usuarios.length === 0) {
         document.getElementById('lista-usuarios').textContent = 'Todavía no hay usuarios registrados.';
       } else {
-        let html = '<table><tr><th>Usuario</th><th>Clave</th></tr>';
+        let html = '<table><tr><th>Usuario</th><th>Institución</th><th>Clave</th></tr>';
         for (const u of datos.usuarios) {
           const clave = u.password_visible
             ? u.password_visible
             : '<span class="clave-modificada">modificada por el usuario</span>';
-          html += `<tr><td>${u.username}</td><td>${clave}</td></tr>`;
+          const inst = u.nombre_institucion || '<span class="clave-modificada">sin nombre</span>';
+          html += `<tr><td>${u.username}</td><td>${inst}</td><td>${clave}</td></tr>`;
         }
         html += '</table>';
         document.getElementById('lista-usuarios').innerHTML = html;
