@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel · Un Millón de Firmas</title>
+<style>
+  :root { --azul: #1d3557; --celeste: #457b9d; --claro: #f1faee; --acento: #e63946; --verde: #2a9d8f; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Segoe UI', Roboto, Arial, sans-serif; background: var(--claro); color: var(--azul); }
+  header { background: var(--azul); color:white; padding:22px 16px; text-align:center; }
+  header h1 { margin:0; font-size:1.4rem; }
+  main { max-width: 640px; margin: 0 auto; padding: 28px 16px 60px; }
+  .panel { background:white; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); padding:26px; margin-bottom:24px; }
+  .panel h2 { margin-top:0; font-size:1.15rem; }
+  .panel h3 { font-size:1rem; margin:24px 0 6px; color: var(--azul); border-top:1px solid #eee; padding-top:20px; }
+  label { display:block; font-weight:600; margin:14px 0 6px; }
+  input { width:100%; padding:10px 12px; border:1px solid #ccc; border-radius:8px; font-size:1rem; }
+  button { margin-top:18px; background: var(--celeste); color:white; border:none; padding:12px 22px; border-radius:8px; font-weight:700; cursor:pointer; font-size:1rem; }
+  button:hover { background: var(--azul); }
+  button.secundario { background: var(--verde); }
+  button.secundario:hover { background:#21766c; }
+  button.exportar { background: #e76f51; margin-top:12px; }
+  button.exportar:hover { background:#c0552f; }
+  .mensaje { margin-top:14px; padding:10px 14px; border-radius:8px; font-weight:600; display:none; }
+  .mensaje.ok { background:#d8f3dc; color:#1b4332; display:block; }
+  .mensaje.error { background:#ffe5e5; color:#9d0208; display:block; }
+  table { width:100%; border-collapse: collapse; margin-top: 12px; font-size: 0.92rem; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid #eee; }
+  th { color: var(--celeste); }
+  .salir { background:none; border:none; color: var(--acento); font-weight:700; cursor:pointer; padding:0; margin-top:0; text-decoration: underline; }
+  .oculto { display:none; }
+  .subtotal { margin-top:10px; font-weight:700; color: var(--azul); }
+  .clave-modificada { color: #aaa; font-style: italic; }
+  .total-actas { margin-top:10px; font-weight:700; color: var(--azul); font-size:0.95rem; }
+</style>
+</head>
+<body>
+  <header><h1>Panel · Un Millón de Firmas por la Universidad Pública</h1></header>
+  <main>
+
+    <!-- LOGIN -->
+    <section class="panel" id="panel-login">
+      <h2>Iniciar sesión</h2>
+      <label for="login-usuario">Usuario</label>
+      <input id="login-usuario" type="text" autocomplete="username">
+      <label for="login-clave">Clave</label>
+      <input id="login-clave" type="password" autocomplete="current-password">
+      <button onclick="iniciarSesion()">Ingresar</button>
+      <div class="mensaje" id="login-mensaje"></div>
+      <p style="margin-top:18px; font-size:0.85rem; color:var(--celeste);">
+        <a href="/index.html" style="color:var(--celeste);">← Volver a la página principal</a>
+      </p>
+    </section>
+
+    <!-- PANEL LOGUEADO -->
+    <div id="zona-logueada" class="oculto">
+
+      <section class="panel">
+        <h2>Sesión activa: <span id="nombre-usuario"></span> <span id="etiqueta-rol"></span></h2>
+        <button class="salir" onclick="cerrarSesion()">Cerrar sesión</button>
+      </section>
+
+      <!-- Solo para usuarios (rol: usuario) -->
+      <section class="panel oculto" id="panel-usuario">
+        <h2>Cargar acta</h2>
+        <p style="font-size:0.9rem; color:var(--celeste);">No podés repetir un número de acta que ya cargaste, pero otros usuarios sí pueden usar el mismo número.</p>
+        <label for="acta-numero">Número de acta</label>
+        <input id="acta-numero" type="text" placeholder="Ej: 001/2026">
+        <label for="acta-cantidad">Cantidad de firmantes</label>
+        <input id="acta-cantidad" type="number" min="1" step="1" placeholder="Ej: 35">
+        <button onclick="cargarActa()">Guardar acta</button>
+        <div class="mensaje" id="acta-mensaje"></div>
+      </section>
+
+      <section class="panel oculto" id="panel-mis-actas">
+        <h2>Mis actas cargadas</h2>
+        <div id="lista-actas">Cargando…</div>
+        <div class="subtotal" id="subtotal"></div>
+      </section>
+
+      <!-- Solo para administradores (rol: administrador) -->
+      <section class="panel oculto" id="panel-administrador">
+
+        <h2>Crear nuevo usuario</h2>
+        <label for="nuevo-usuario">Usuario</label>
+        <input id="nuevo-usuario" type="text">
+        <label for="nuevo-clave">Clave</label>
+        <input id="nuevo-clave" type="password">
+        <button class="secundario" onclick="crearUsuario()">Crear cuenta</button>
+        <div class="mensaje" id="crear-mensaje"></div>
+
+        <h3>Usuarios registrados</h3>
+        <div id="lista-usuarios">Cargando…</div>
+
+        <h3>Actas cargadas por usuario</h3>
+        <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <select id="filtro-usuario" onchange="filtrarActas()" style="padding:8px 12px;border:1px solid #ccc;border-radius:8px;font-size:0.95rem;">
+            <option value="">Todos los usuarios</option>
+          </select>
+          <button class="exportar" style="margin-top:0;" onclick="exportarCSV()">Exportar CSV</button>
+        </div>
+        <div id="lista-todas-actas" style="margin-top:14px;">Cargando…</div>
+        <div class="total-actas" id="total-todas-actas"></div>
+
+      </section>
+
+      <!-- Cambiar contraseña (al final, visible para todos) -->
+      <section class="panel">
+        <h2>Cambiar contraseña</h2>
+        <label for="clave-actual">Clave actual</label>
+        <input id="clave-actual" type="password">
+        <label for="clave-nueva">Nueva clave</label>
+        <input id="clave-nueva" type="password">
+        <label for="clave-nueva2">Repetir nueva clave</label>
+        <input id="clave-nueva2" type="password">
+        <button class="secundario" onclick="cambiarClave()">Actualizar clave</button>
+        <div class="mensaje" id="clave-mensaje"></div>
+      </section>
+
+    </div>
+  </main>
+
+<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.3</div>
+
+<script>
+  const TOKEN_KEY = 'firmas_token';
+  const DATOS_KEY = 'firmas_datos';
+  let _todasLasActas = [];
+
+  function guardarSesion(token, username, rol) {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(DATOS_KEY, JSON.stringify({ username, rol }));
+  }
+  function obtenerToken() { return localStorage.getItem(TOKEN_KEY); }
+  function obtenerDatos() {
+    try { return JSON.parse(localStorage.getItem(DATOS_KEY) || 'null'); } catch { return null; }
+  }
+  function cerrarSesion() {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(DATOS_KEY);
+    location.reload();
+  }
+
+  function mostrarMensaje(id, texto, tipo) {
+    const el = document.getElementById(id);
+    el.textContent = texto;
+    el.className = 'mensaje ' + tipo;
+  }
+
+  async function iniciarSesion() {
+    const username = document.getElementById('login-usuario').value.trim();
+    const password = document.getElementById('login-clave').value;
+    if (!username || !password) {
+      mostrarMensaje('login-mensaje', 'Completá usuario y clave.', 'error'); return;
+    }
+    try {
+      const resp = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const datos = await resp.json();
+      if (!resp.ok) { mostrarMensaje('login-mensaje', datos.error || 'No se pudo iniciar sesión.', 'error'); return; }
+      guardarSesion(datos.token, datos.username, datos.rol);
+      location.reload();
+    } catch (e) {
+      mostrarMensaje('login-mensaje', 'Error de conexión con el servidor.', 'error');
+    }
+  }
+
+  async function cambiarClave() {
+    const password_actual = document.getElementById('clave-actual').value;
+    const password_nueva = document.getElementById('clave-nueva').value;
+    const password_nueva2 = document.getElementById('clave-nueva2').value;
+    if (!password_actual || !password_nueva || !password_nueva2) {
+      mostrarMensaje('clave-mensaje', 'Completá todos los campos.', 'error'); return;
+    }
+    if (password_nueva !== password_nueva2) {
+      mostrarMensaje('clave-mensaje', 'Las nuevas claves no coinciden.', 'error'); return;
+    }
+    try {
+      const resp = await fetch('/api/password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + obtenerToken() },
+        body: JSON.stringify({ password_actual, password_nueva })
+      });
+      const datos = await resp.json();
+      if (!resp.ok) { mostrarMensaje('clave-mensaje', datos.error || 'No se pudo cambiar la clave.', 'error'); return; }
+      mostrarMensaje('clave-mensaje', 'Clave actualizada. Volvé a iniciar sesión.', 'ok');
+      document.getElementById('clave-actual').value = '';
+      document.getElementById('clave-nueva').value = '';
+      document.getElementById('clave-nueva2').value = '';
+      setTimeout(cerrarSesion, 2000);
+    } catch (e) {
+      mostrarMensaje('clave-mensaje', 'Error de conexión con el servidor.', 'error');
+    }
+  }
+
+  async function cargarActa() {
+    const numero_acta = document.getElementById('acta-numero').value.trim();
+    const cantidad_firmantes = parseInt(document.getElementById('acta-cantidad').value, 10);
+    try {
+      const resp = await fetch('/api/actas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + obtenerToken() },
+        body: JSON.stringify({ numero_acta, cantidad_firmantes })
+      });
+      const datos = await resp.json();
+      if (!resp.ok) { mostrarMensaje('acta-mensaje', datos.error || 'No se pudo guardar el acta.', 'error'); return; }
+      mostrarMensaje('acta-mensaje', 'Acta guardada correctamente.', 'ok');
+      document.getElementById('acta-numero').value = '';
+      document.getElementById('acta-cantidad').value = '';
+      cargarListaActas();
+    } catch (e) {
+      mostrarMensaje('acta-mensaje', 'Error de conexión con el servidor.', 'error');
+    }
+  }
+
+  async function cargarListaActas() {
+    try {
+      const resp = await fetch('/api/actas', { headers: { 'Authorization': 'Bearer ' + obtenerToken() } });
+      const datos = await resp.json();
+      if (!resp.ok) { document.getElementById('lista-actas').textContent = datos.error || 'No se pudo cargar la lista.'; return; }
+      if (datos.actas.length === 0) {
+        document.getElementById('lista-actas').textContent = 'Todavía no cargaste ninguna acta.';
+      } else {
+        let html = '<table><tr><th>N° de acta</th><th>Firmantes</th><th>Fecha</th></tr>';
+        for (const a of datos.actas) {
+          html += `<tr><td>${a.numero_acta}</td><td>${a.cantidad_firmantes}</td><td>${a.creado_en}</td></tr>`;
+        }
+        html += '</table>';
+        document.getElementById('lista-actas').innerHTML = html;
+      }
+      document.getElementById('subtotal').textContent = `Subtotal: ${datos.subtotal.toLocaleString('es-AR')} firmas`;
+    } catch (e) {
+      document.getElementById('lista-actas').textContent = 'Error de conexión con el servidor.';
+    }
+  }
+
+  async function crearUsuario() {
+    const username = document.getElementById('nuevo-usuario').value.trim();
+    const password = document.getElementById('nuevo-clave').value;
+    if (!username || !password) {
+      mostrarMensaje('crear-mensaje', 'Completá usuario y clave.', 'error'); return;
+    }
+    try {
+      const resp = await fetch('/api/administradores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + obtenerToken() },
+        body: JSON.stringify({ username, password })
+      });
+      const datos = await resp.json();
+      if (!resp.ok) { mostrarMensaje('crear-mensaje', datos.error || 'No se pudo crear la cuenta.', 'error'); return; }
+      mostrarMensaje('crear-mensaje', 'Cuenta creada correctamente.', 'ok');
+      document.getElementById('nuevo-usuario').value = '';
+      document.getElementById('nuevo-clave').value = '';
+      cargarListaUsuarios();
+    } catch (e) {
+      mostrarMensaje('crear-mensaje', 'Error de conexión con el servidor.', 'error');
+    }
+  }
+
+  async function cargarListaUsuarios() {
+    try {
+      const resp = await fetch('/api/usuarios', { headers: { 'Authorization': 'Bearer ' + obtenerToken() } });
+      const datos = await resp.json();
+      if (!resp.ok) { document.getElementById('lista-usuarios').textContent = 'No se pudo cargar la lista.'; return; }
+      if (datos.usuarios.length === 0) {
+        document.getElementById('lista-usuarios').textContent = 'Todavía no hay usuarios registrados.';
+      } else {
+        let html = '<table><tr><th>Usuario</th><th>Clave</th></tr>';
+        for (const u of datos.usuarios) {
+          const clave = u.password_visible
+            ? u.password_visible
+            : '<span class="clave-modificada">modificada por el usuario</span>';
+          html += `<tr><td>${u.username}</td><td>${clave}</td></tr>`;
+        }
+        html += '</table>';
+        document.getElementById('lista-usuarios').innerHTML = html;
+      }
+    } catch (e) {
+      document.getElementById('lista-usuarios').textContent = 'Error de conexión con el servidor.';
+    }
+  }
+
+  async function cargarTodasLasActas() {
+    try {
+      const resp = await fetch('/api/admin/actas', { headers: { 'Authorization': 'Bearer ' + obtenerToken() } });
+      const datos = await resp.json();
+      if (!resp.ok) { document.getElementById('lista-todas-actas').textContent = 'No se pudo cargar.'; return; }
+      _todasLasActas = datos.actas;
+      // Poblar filtro con usuarios unicos
+      const sel = document.getElementById('filtro-usuario');
+      const usuariosUnicos = [...new Set(datos.actas.map(a => a.username))].sort();
+      sel.innerHTML = '<option value="">Todos los usuarios</option>';
+      usuariosUnicos.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u; opt.textContent = u;
+        sel.appendChild(opt);
+      });
+      filtrarActas();
+    } catch (e) {
+      document.getElementById('lista-todas-actas').textContent = 'Error de conexión con el servidor.';
+    }
+  }
+
+  function filtrarActas() {
+    const filtro = document.getElementById('filtro-usuario').value;
+    const actas = filtro ? _todasLasActas.filter(a => a.username === filtro) : _todasLasActas;
+    if (actas.length === 0) {
+      document.getElementById('lista-todas-actas').textContent = 'No hay actas para mostrar.';
+      document.getElementById('total-todas-actas').textContent = '';
+      return;
+    }
+    let html = '<table><tr><th>Usuario</th><th>N° de acta</th><th>Firmantes</th><th>Fecha</th></tr>';
+    let total = 0;
+    for (const a of actas) {
+      total += Number(a.cantidad_firmantes);
+      html += `<tr><td>${a.username}</td><td>${a.numero_acta}</td><td>${a.cantidad_firmantes}</td><td>${a.creado_en}</td></tr>`;
+    }
+    html += '</table>';
+    document.getElementById('lista-todas-actas').innerHTML = html;
+    const label = filtro ? `Subtotal ${filtro}` : 'Total general';
+    document.getElementById('total-todas-actas').textContent = `${label}: ${total.toLocaleString('es-AR')} firmas`;
+  }
+
+  function exportarCSV() {
+    if (_todasLasActas.length === 0) { alert('No hay actas para exportar.'); return; }
+    const encabezado = 'Usuario,N° de acta,Firmantes,Fecha';
+    const filas = _todasLasActas.map(a =>
+      `${a.username},${a.numero_acta},${a.cantidad_firmantes},"${a.creado_en}"`
+    );
+    const csv = '﻿' + [encabezado, ...filas].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'actas_firmas.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  (function init() {
+    const token = obtenerToken();
+    const datosUsuario = obtenerDatos();
+    if (token && datosUsuario) {
+      document.getElementById('panel-login').classList.add('oculto');
+      document.getElementById('zona-logueada').classList.remove('oculto');
+      document.getElementById('nombre-usuario').textContent = datosUsuario.username;
+      document.getElementById('etiqueta-rol').textContent =
+        datosUsuario.rol === 'administrador' ? '(administrador)' : '(usuario)';
+
+      if (datosUsuario.rol === 'usuario') {
+        document.getElementById('panel-usuario').classList.remove('oculto');
+        document.getElementById('panel-mis-actas').classList.remove('oculto');
+        cargarListaActas();
+      } else if (datosUsuario.rol === 'administrador') {
+        document.getElementById('panel-administrador').classList.remove('oculto');
+        cargarListaUsuarios();
+        cargarTodasLasActas();
+      }
+    }
+  })();
+</script>
+</body>
+</html>
