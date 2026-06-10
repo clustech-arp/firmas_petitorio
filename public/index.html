@@ -3,60 +3,417 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Un Millón de Firmas por la Universidad Pública</title>
+<title>Petitorio – Un Millón de Firmas por la Universidad Pública</title>
 <style>
-  :root { --azul: #1d3557; --celeste: #457b9d; --claro: #f1faee; --acento: #e63946; }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family:'Segoe UI', Roboto, Arial, sans-serif; background:var(--claro); color:var(--azul); }
-  header { background:var(--azul); color:white; padding:22px 16px 18px; text-align:center; }
-  .logos { display:flex; justify-content:center; align-items:center; gap:20px; margin-bottom:14px; flex-wrap:wrap; }
-  .logos img { height:64px; object-fit:contain; border-radius:6px; }
-  header h1 { margin:0 0 6px; font-size:1.7rem; }
-  header p { margin:0; opacity:0.85; font-size:0.95rem; }
-  main { max-width:760px; margin:0 auto; padding:32px 16px 60px; }
-  .panel { background:white; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); padding:28px; text-align:center; }
-  .contador { font-size:3rem; font-weight:700; color:var(--acento); margin:4px 0; }
-  .meta-texto { font-size:1rem; color:var(--celeste); margin-bottom:18px; }
-  .barra-fondo { width:100%; background:#e0e0e0; border-radius:999px; height:28px; overflow:hidden; }
-  .barra-relleno { height:100%; background:linear-gradient(90deg, var(--celeste), var(--acento)); width:0%; transition:width 0.6s ease; border-radius:999px; }
-  .porcentaje { margin-top:10px; font-weight:600; }
-  .btn-desglose { margin-top:22px; background:none; border:2px solid var(--celeste); color:var(--celeste); padding:9px 20px; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.95rem; }
-  .btn-desglose:hover { background:var(--celeste); color:white; }
-  .desglose { margin-top:18px; text-align:left; display:none; }
-  .desglose table { width:100%; border-collapse:collapse; font-size:0.93rem; }
-  .desglose th, .desglose td { padding:8px 10px; border-bottom:1px solid #eee; text-align:left; }
-  .desglose th { color:var(--celeste); }
-  .desglose .subtotal-inst { font-weight:700; }
-  footer { text-align:center; padding:18px; font-size:0.85rem; color:var(--celeste); }
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
+
+  :root {
+    --violeta: #6B2D91;
+    --violeta-oscuro: #4A1D6B;
+    --violeta-claro: #9B5CC4;
+    --lavanda: #F0E6FA;
+    --verde: #3BB54A;
+    --amarillo: #F5C842;
+    --blanco: #ffffff;
+    --texto: #2d1a42;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+    background: var(--lavanda);
+    color: var(--texto);
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(160deg, var(--violeta-oscuro) 0%, var(--violeta) 60%, var(--violeta-claro) 100%);
+    padding: 28px 16px 32px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 20% 50%, rgba(255,255,255,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 50%, rgba(255,255,255,0.06) 0%, transparent 60%);
+  }
+
+  .logos {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    position: relative;
+  }
+
+  .logos img {
+    height: 72px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.35));
+  }
+
+  .titulo-principal {
+    font-size: clamp(2.4rem, 7vw, 4rem);
+    font-weight: 900;
+    color: var(--blanco);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.25);
+    line-height: 1;
+    position: relative;
+  }
+
+  .subtitulo-header {
+    margin-top: 8px;
+    font-size: clamp(0.8rem, 2.5vw, 1.05rem);
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    position: relative;
+  }
+
+  /* ── MAIN ── */
+  main {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 32px 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ── TARJETA BASE ── */
+  .card {
+    background: var(--blanco);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(107,45,145,0.12);
+    padding: 28px 28px;
+    border-left: 5px solid var(--violeta);
+  }
+
+  /* ── EXIGENCIA ── */
+  .card-exigencia {
+    background: var(--blanco);
+    border-radius: 16px;
+    border: 2px solid var(--violeta-claro);
+    padding: 28px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(107,45,145,0.10);
+  }
+
+  .card-exigencia .icono { font-size: 2.4rem; margin-bottom: 10px; }
+
+  .card-exigencia p {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--violeta-oscuro);
+    line-height: 1.6;
+  }
+
+  /* ── DESCRIPCION ── */
+  .card-descripcion p {
+    font-size: 0.97rem;
+    line-height: 1.7;
+    color: #3d2255;
+  }
+
+  /* ── COMO PARTICIPAR ── */
+  .card-participar h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--violeta);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .lista-check {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .lista-check li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.95rem;
+    color: #3d2255;
+  }
+
+  .lista-check li::before {
+    content: '✅';
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* ── ACCIONES ── */
+  .card-acciones {
+    background: linear-gradient(135deg, #f9f3ff 0%, #ede0fa 100%);
+    border-radius: 16px;
+    padding: 24px 28px;
+    box-shadow: 0 4px 16px rgba(107,45,145,0.10);
+    border: 1px solid #dcc4f5;
+  }
+
+  .card-acciones h2 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--violeta);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+
+  .acciones-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  @media (max-width: 500px) { .acciones-grid { grid-template-columns: 1fr; } }
+
+  .accion-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--blanco);
+    border-radius: 10px;
+    padding: 12px 14px;
+    text-decoration: none;
+    color: var(--violeta-oscuro);
+    font-weight: 700;
+    font-size: 0.88rem;
+    box-shadow: 0 2px 8px rgba(107,45,145,0.10);
+    border: 1px solid #dcc4f5;
+    transition: all 0.2s;
+  }
+
+  .accion-item:hover {
+    background: var(--violeta);
+    color: var(--blanco);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(107,45,145,0.22);
+  }
+
+  .accion-item .icono-accion { font-size: 1.5rem; }
+
+  /* ── CONTADOR ── */
+  .card-contador {
+    background: linear-gradient(135deg, var(--violeta-oscuro) 0%, var(--violeta) 100%);
+    border-radius: 16px;
+    padding: 28px;
+    text-align: center;
+    color: var(--blanco);
+    box-shadow: 0 6px 28px rgba(74,29,107,0.35);
+  }
+
+  .card-contador h2 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.75;
+    margin-bottom: 10px;
+  }
+
+  .numero-firmas {
+    font-size: clamp(3rem, 10vw, 5rem);
+    font-weight: 900;
+    color: var(--amarillo);
+    line-height: 1;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  }
+
+  .meta-texto {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-top: 6px;
+    margin-bottom: 20px;
+  }
+
+  .barra-fondo {
+    width: 100%;
+    background: rgba(255,255,255,0.2);
+    border-radius: 999px;
+    height: 22px;
+    overflow: hidden;
+  }
+
+  .barra-relleno {
+    height: 100%;
+    background: linear-gradient(90deg, var(--amarillo), #ff9f00);
+    width: 0%;
+    transition: width 0.8s ease;
+    border-radius: 999px;
+  }
+
+  .porcentaje {
+    margin-top: 10px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--amarillo);
+  }
+
+  .btn-desglose {
+    margin-top: 18px;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.4);
+    color: var(--blanco);
+    padding: 9px 22px;
+    border-radius: 999px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-family: inherit;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+  }
+
+  .btn-desglose:hover {
+    background: rgba(255,255,255,0.25);
+    border-color: var(--amarillo);
+    color: var(--amarillo);
+  }
+
+  .desglose { margin-top: 20px; text-align: left; display: none; }
+
+  .desglose table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    color: var(--blanco);
+  }
+
+  .desglose th, .desglose td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+  }
+
+  .desglose th { opacity: 0.7; font-weight: 700; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 1px; }
+  .desglose .subtotal-inst { font-weight: 700; color: var(--amarillo); }
+
+  /* ── BANNER FINAL ── */
+  .banner-final {
+    background: linear-gradient(135deg, var(--violeta-oscuro) 0%, #7B3AA0 100%);
+    border-radius: 16px;
+    padding: 22px 28px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 20px rgba(74,29,107,0.3);
+  }
+
+  .banner-final .megafono { font-size: 2.5rem; }
+
+  .banner-final p {
+    font-size: clamp(1.1rem, 3.5vw, 1.5rem);
+    font-weight: 900;
+    color: var(--amarillo);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 20px 16px 36px;
+    font-size: 0.8rem;
+    color: var(--violeta-claro);
+  }
+
+  .version { position: fixed; bottom: 8px; right: 12px; font-size: 0.72rem; color: #aaa; opacity: 0.6; }
 </style>
 </head>
 <body>
-  <header>
-    <div class="logos">
-      <img src="/MYP.jpg" alt="Madres y Padres por la Educación Pública">
-      <img src="/escmb.png" alt="Escuela Superior de Comercio Manuel Belgrano">
+
+<header>
+  <div class="logos">
+    <img src="/MYP.jpg" alt="Madres y Padres por la Educación Pública">
+    <img src="/escmb.png" alt="Escuela Superior de Comercio Manuel Belgrano">
+  </div>
+  <div class="titulo-principal">Petitorio</div>
+  <div class="subtitulo-header">A la Corte Suprema de Justicia de la Nación</div>
+</header>
+
+<main>
+
+  <!-- Exigencia central -->
+  <div class="card-exigencia">
+    <div class="icono">📋</div>
+    <p>Exigimos el cumplimiento de la Ley de Financiamiento Universitario, cuyo incumplimiento pone en riesgo el derecho fundamental de acceso a la educación pública.</p>
+  </div>
+
+  <!-- Descripción -->
+  <div class="card card-descripcion">
+    <p>Las comunidades educativas de las escuelas preuniversitarias de Córdoba, CABA, Rosario, La Rioja y La Plata impulsamos un petitorio para exigir la inmediata implementación de la <strong>Ley de Financiamiento Universitario</strong> y el rechazo al recurso presentado por el Gobierno Nacional.</p>
+  </div>
+
+  <!-- Cómo participar -->
+  <div class="card card-participar">
+    <h2>🙏 Cómo colaborar</h2>
+    <ul class="lista-check">
+      <li>La firma es individual y se realizará en todo el país 🇦🇷</li>
+      <li>Firmando la planilla</li>
+      <li>Haciendo firmar a familiares 👨‍👩‍👧‍👦</li>
+      <li>Compartiendo con amistades 👥</li>
+      <li>Acercándola a compañeros/as de trabajo 💼</li>
+      <li>Invitando a vecinos/as 🏠</li>
+      <li>Sumando a toda persona interesada en defender la educación pública 📚❤️</li>
+    </ul>
+  </div>
+
+  <!-- Acciones -->
+  <div class="card-acciones">
+    <h2>📥 Descargá y participá</h2>
+    <div class="acciones-grid">
+      <a class="accion-item" href="https://drive.google.com/file/d/1EKtq1FRUDggwSPGnl9PFYDvIZKdd6VuK/view?usp=drivesdk" target="_blank" rel="noopener">
+        <span class="icono-accion">📄</span>
+        <span>Descargá el petitorio (doble faz)</span>
+      </a>
+      <a class="accion-item" href="mailto:mypconsejeros@gmail.com">
+        <span class="icono-accion">✉️</span>
+        <span>Enviá las hojas escaneadas</span>
+      </a>
     </div>
-    <h1>Un Millón de Firmas por la Universidad Pública</h1>
-    <p>Sumamos firmas de todo el país en apoyo al tratamiento urgente del financiamiento universitario</p>
-  </header>
+  </div>
 
-  <main>
-    <section class="panel">
-      <div class="contador" id="contador">0</div>
-      <div class="meta-texto">de <span id="meta-texto">1.000.000</span> firmas</div>
-      <div class="barra-fondo"><div class="barra-relleno" id="barra"></div></div>
-      <div class="porcentaje" id="porcentaje">0%</div>
+  <!-- Contador -->
+  <div class="card-contador">
+    <h2>📢 Firmas recolectadas</h2>
+    <div class="numero-firmas" id="contador">0</div>
+    <div class="meta-texto">de <span id="meta-texto">1.000.000</span> firmas</div>
+    <div class="barra-fondo"><div class="barra-relleno" id="barra"></div></div>
+    <div class="porcentaje" id="porcentaje">0%</div>
+    <button class="btn-desglose" onclick="toggleDesglose()">▼ Ver desglose por institución</button>
+    <div class="desglose" id="desglose">
+      <div id="tabla-desglose">Cargando…</div>
+    </div>
+  </div>
 
-      <button class="btn-desglose" onclick="toggleDesglose()">▼ Ver desglose por institución</button>
-      <div class="desglose" id="desglose">
-        <div id="tabla-desglose">Cargando…</div>
-      </div>
-    </section>
-  </main>
+  <!-- Banner final -->
+  <div class="banner-final">
+    <span class="megafono">📣</span>
+    <p>¡Vamos por el millón de firmas!</p>
+  </div>
 
-  <footer>Conteo actualizado en tiempo real a partir de las actas cargadas por las instituciones participantes.</footer>
+</main>
 
-<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.10</div>
+<footer>Conteo actualizado en tiempo real a partir de las actas cargadas por las instituciones participantes.</footer>
+
+<div class="version">v1.20</div>
 
 <script>
   let desgloseVisible = false;
