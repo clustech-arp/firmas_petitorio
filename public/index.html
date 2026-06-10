@@ -162,6 +162,19 @@
   <!-- HEADER -->
   <img class="seccion-imagen" src="/header.png" alt="Petitorio a la Corte Suprema de Justicia de la Nación">
 
+  <!-- CONTADOR -->
+  <div class="seccion-contador">
+    <div class="contador-label">📢 Firmas recolectadas</div>
+    <div class="numero-firmas" id="contador">0</div>
+    <div class="meta-texto">de <span id="meta-texto">1.000.000</span> firmas</div>
+    <div class="barra-fondo"><div class="barra-relleno" id="barra"></div></div>
+    <div class="porcentaje" id="porcentaje">0%</div>
+    <button class="btn-desglose" onclick="toggleDesglose()">▼ Ver desglose por institución</button>
+    <div class="desglose" id="desglose">
+      <div id="tabla-desglose">Cargando…</div>
+    </div>
+  </div>
+
   <!-- CUERPO (cómo colaborar) -->
   <img class="seccion-imagen" src="/cuerpo.png" alt="Cómo colaborar">
 
@@ -180,25 +193,12 @@
     </div>
   </div>
 
-  <!-- CONTADOR -->
-  <div class="seccion-contador">
-    <div class="contador-label">📢 Firmas recolectadas</div>
-    <div class="numero-firmas" id="contador">0</div>
-    <div class="meta-texto">de <span id="meta-texto">1.000.000</span> firmas</div>
-    <div class="barra-fondo"><div class="barra-relleno" id="barra"></div></div>
-    <div class="porcentaje" id="porcentaje">0%</div>
-    <button class="btn-desglose" onclick="toggleDesglose()">▼ Ver desglose por institución</button>
-    <div class="desglose" id="desglose">
-      <div id="tabla-desglose">Cargando…</div>
-    </div>
-  </div>
-
   <!-- PIE -->
   <img class="seccion-imagen" src="/pie.png" alt="Vamos por el millón de firmas">
 
   <footer>Conteo actualizado en tiempo real a partir de las actas cargadas por las instituciones participantes.</footer>
 
-<div class="version">v1.22</div>
+<div class="version">v1.23</div>
 
 <script>
   let desgloseVisible = false;
