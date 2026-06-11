@@ -14,7 +14,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 function generarToken(admin) {
   return jwt.sign({ id: admin.id, username: admin.username, rol: admin.rol }, JWT_SECRET, { expiresIn: '12h' });
 }
-
 function requiereAuth(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
@@ -22,12 +21,10 @@ function requiereAuth(req, res, next) {
   try { req.admin = jwt.verify(token, JWT_SECRET); next(); }
   catch (e) { return res.status(401).json({ error: 'Token invalido o expirado' }); }
 }
-
 function requiereAdministrador(req, res, next) {
   if (req.admin?.rol !== 'administrador') return res.status(403).json({ error: 'Requiere permisos de administrador' });
   next();
 }
-
 function normalizarNumeroActa(s) {
   if (/^\d+$/.test(s)) return String(parseInt(s, 10));
   return s;
@@ -55,6 +52,19 @@ app.get('/api/desglose', async (req, res) => {
     `);
     res.json({ provincias: resultado.rows });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Error al obtener el desglose' }); }
+});
+
+app.get('/api/contactos', async (req, res) => {
+  try {
+    const resultado = await db.execute(`
+      SELECT provincia, contacto
+      FROM administradores
+      WHERE rol = 'usuario' AND contacto IS NOT NULL AND contacto != ''
+      GROUP BY provincia
+      ORDER BY provincia ASC
+    `);
+    res.json({ contactos: resultado.rows });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Error al obtener contactos' }); }
 });
 
 app.post('/api/login', async (req, res) => {
@@ -103,12 +113,10 @@ app.post('/api/actas', requiereAuth, async (req, res) => {
   }
 });
 
-// Carga masiva de actas
 app.post('/api/actas/bulk', requiereAuth, async (req, res) => {
   const { actas } = req.body || {};
   if (!Array.isArray(actas) || actas.length === 0)
     return res.status(400).json({ error: 'Se esperaba un array de actas' });
-
   const resultados = [];
   for (const item of actas) {
     const numero = normalizarNumeroActa(String(item.numero_acta || '').trim());
@@ -118,15 +126,10 @@ app.post('/api/actas/bulk', requiereAuth, async (req, res) => {
       continue;
     }
     try {
-      await db.execute({
-        sql: 'INSERT INTO actas (admin_id, numero_acta, cantidad_firmantes) VALUES (?, ?, ?)',
-        args: [req.admin.id, numero, cantidad]
-      });
+      await db.execute({ sql: 'INSERT INTO actas (admin_id, numero_acta, cantidad_firmantes) VALUES (?, ?, ?)', args: [req.admin.id, numero, cantidad] });
       resultados.push({ numero_acta: numero, cantidad_firmantes: cantidad, ok: true });
     } catch (e) {
-      const msg = String(e.message || e).includes('UNIQUE')
-        ? `Acta N° ${numero} ya estaba cargada`
-        : 'Error al guardar';
+      const msg = String(e.message || e).includes('UNIQUE') ? `Acta N° ${numero} ya estaba cargada` : 'Error al guardar';
       resultados.push({ numero_acta: numero, cantidad_firmantes: cantidad, ok: false, error: msg });
     }
   }
@@ -147,13 +150,25 @@ app.get('/api/actas', requiereAuth, async (req, res) => {
 // ---------- Rutas de administrador ----------
 
 app.post('/api/administradores', requiereAuth, requiereAdministrador, async (req, res) => {
-  const { username, password, nombre_institucion, provincia } = req.body || {};
+  const { username, password, nombre_institucion, provincia, contacto } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: 'Usuario y clave son obligatorios' });
+
+  // Validar: solo un contacto por provincia
+  if (contacto && contacto.trim() && provincia && provincia.trim()) {
+    const existing = await db.execute({
+      sql: "SELECT id FROM administradores WHERE provincia = ? AND contacto IS NOT NULL AND contacto != '' AND rol = 'usuario'",
+      args: [provincia.trim()]
+    });
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ error: `Ya existe un contacto registrado para la provincia de ${provincia.trim()}. Solo puede haber uno por provincia.` });
+    }
+  }
+
   try {
     const hash = bcrypt.hashSync(password, 10);
     await db.execute({
-      sql: "INSERT INTO administradores (username, password_hash, password_visible, nombre_institucion, provincia, rol) VALUES (?, ?, ?, ?, ?, 'usuario')",
-      args: [username, hash, password, nombre_institucion || null, provincia || null]
+      sql: "INSERT INTO administradores (username, password_hash, password_visible, nombre_institucion, provincia, contacto, rol) VALUES (?, ?, ?, ?, ?, ?, 'usuario')",
+      args: [username, hash, password, nombre_institucion || null, provincia || null, (contacto && contacto.trim()) || null]
     });
     res.status(201).json({ ok: true });
   } catch (e) {
@@ -165,7 +180,7 @@ app.post('/api/administradores', requiereAuth, requiereAdministrador, async (req
 app.get('/api/usuarios', requiereAuth, requiereAdministrador, async (req, res) => {
   try {
     const resultado = await db.execute(
-      "SELECT username, nombre_institucion, provincia, password_visible, creado_en FROM administradores WHERE rol = 'usuario' ORDER BY creado_en ASC"
+      "SELECT username, nombre_institucion, provincia, contacto, password_visible, creado_en FROM administradores WHERE rol = 'usuario' ORDER BY creado_en ASC"
     );
     res.json({ usuarios: resultado.rows });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Error al obtener los usuarios' }); }

@@ -80,6 +80,13 @@
   }
   .accion-item .icono { font-size: 1.5rem; flex-shrink: 0; }
 
+  /* Contactos */
+  .contactos-titulo { font-weight:700; color:var(--violeta); margin-top:18px; margin-bottom:10px; font-size:0.88rem; text-transform:uppercase; letter-spacing:1px; }
+  .contacto-item { display:flex; align-items:baseline; gap:8px; padding:7px 0; border-bottom:1px solid #e0ccf5; font-size:0.9rem; color:#3d2255; }
+  .contacto-item:last-child { border-bottom:none; }
+  .contacto-prov { font-weight:700; min-width:110px; color:var(--violeta); }
+  .contactos-vacio { font-size:0.88rem; color:#aaa; font-style:italic; }
+
   /* ── CONTADOR ── */
   .seccion-contador {
     background: linear-gradient(135deg, var(--violeta-oscuro) 0%, var(--violeta) 100%);
@@ -181,16 +188,14 @@
   <!-- ACCIONES -->
   <div class="seccion-acciones">
     <h2>📥 Descargá y participá</h2>
-    <div class="acciones-grid">
-      <a class="accion-item" href="https://drive.google.com/file/d/1EKtq1FRUDggwSPGnl9PFYDvIZKdd6VuK/view?usp=drivesdk" target="_blank" rel="noopener">
+    <div class="acciones-grid" style="grid-template-columns:1fr;">
+      <a class="accion-item" href="https://drive.google.com/file/d/1BEe6Oge5Q9cAQstv1NmcTP6Wb9duO25X/view" target="_blank" rel="noopener">
         <span class="icono">📄</span>
         <span>Descargá el petitorio (doble faz)</span>
       </a>
-      <a class="accion-item" href="mailto:mypconsejeros@gmail.com">
-        <span class="icono">✉️</span>
-        <span>Enviá las hojas escaneadas<br><small>mypconsejeros@gmail.com</small></span>
-      </a>
     </div>
+    <div class="contactos-titulo">📞 Enviá las hojas a tu contacto provincial</div>
+    <div id="contactos-lista"><span class="contactos-vacio">Cargando…</span></div>
   </div>
 
   <!-- PIE -->
@@ -198,7 +203,7 @@
 
   <footer>Conteo actualizado en tiempo real a partir de las actas cargadas por las instituciones participantes.</footer>
 
-<div class="version">v1.24</div>
+<div class="version">v1.25</div>
 
 <script>
   let desgloseVisible = false;
@@ -253,7 +258,27 @@
     }
   }
 
+  async function cargarContactos() {
+    try {
+      const resp = await fetch('/api/contactos');
+      const datos = await resp.json();
+      const cont = document.getElementById('contactos-lista');
+      if (!datos.contactos || datos.contactos.length === 0) {
+        cont.innerHTML = '<span class="contactos-vacio">Próximamente se publicarán los contactos por provincia.</span>';
+        return;
+      }
+      let html = '';
+      for (const c of datos.contactos) {
+        html += `<div class="contacto-item"><span class="contacto-prov">${c.provincia}</span><span>${c.contacto}</span></div>`;
+      }
+      cont.innerHTML = html;
+    } catch (e) {
+      document.getElementById('contactos-lista').innerHTML = '<span class="contactos-vacio">No se pudo cargar.</span>';
+    }
+  }
+
   actualizarContador();
+  cargarContactos();
   setInterval(actualizarContador, 15000);
 </script>
 </body>

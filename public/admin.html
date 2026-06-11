@@ -6,199 +6,213 @@
 <title>Panel · Un Millón de Firmas</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  :root { --azul: #1d3557; --celeste: #457b9d; --claro: #f1faee; --acento: #e63946; --verde: #2a9d8f; --violeta: #6B2D91; }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family:'Segoe UI', Roboto, Arial, sans-serif; background: var(--claro); color: var(--azul); }
-  header { background: var(--azul); color:white; padding:22px 16px; text-align:center; }
+  :root { --azul:#1d3557; --celeste:#457b9d; --claro:#f1faee; --acento:#e63946; --verde:#2a9d8f; --violeta:#6B2D91; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Segoe UI',Roboto,Arial,sans-serif; background:var(--claro); color:var(--azul); }
+  header { background:var(--azul); color:white; padding:22px 16px; text-align:center; }
   header h1 { margin:0; font-size:1.4rem; }
-  main { max-width: 680px; margin: 0 auto; padding: 28px 16px 60px; }
+  main { max-width:700px; margin:0 auto; padding:28px 16px 60px; }
   .panel { background:white; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); padding:26px; margin-bottom:24px; }
   .panel h2 { margin-top:0; font-size:1.15rem; }
-  .panel h3 { font-size:1rem; margin:24px 0 6px; color: var(--azul); border-top:1px solid #eee; padding-top:20px; }
+  .panel h3 { font-size:1rem; margin:24px 0 6px; color:var(--azul); border-top:1px solid #eee; padding-top:20px; }
   label { display:block; font-weight:600; margin:14px 0 6px; }
-  input[type=text], input[type=password], input[type=number] { width:100%; padding:10px 12px; border:1px solid #ccc; border-radius:8px; font-size:1rem; }
-  button { margin-top:18px; background: var(--celeste); color:white; border:none; padding:12px 22px; border-radius:8px; font-weight:700; cursor:pointer; font-size:1rem; }
-  button:hover { background: var(--azul); }
-  button.secundario { background: var(--verde); }
+  input[type=text],input[type=password],input[type=number] { width:100%; padding:10px 12px; border:1px solid #ccc; border-radius:8px; font-size:1rem; }
+  button { margin-top:18px; background:var(--celeste); color:white; border:none; padding:12px 22px; border-radius:8px; font-weight:700; cursor:pointer; font-size:1rem; }
+  button:hover { background:var(--azul); }
+  button.secundario { background:var(--verde); }
   button.secundario:hover { background:#21766c; }
-  button.exportar { background: #e76f51; margin-top:12px; }
+  button.exportar { background:#e76f51; margin-top:12px; }
   button.exportar:hover { background:#c0552f; }
   .mensaje { margin-top:14px; padding:10px 14px; border-radius:8px; font-weight:600; display:none; }
   .mensaje.ok { background:#d8f3dc; color:#1b4332; display:block; }
   .mensaje.error { background:#ffe5e5; color:#9d0208; display:block; }
-  table { width:100%; border-collapse: collapse; margin-top: 12px; font-size: 0.92rem; }
-  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid #eee; }
-  th { color: var(--celeste); }
-  .salir { background:none; border:none; color: var(--acento); font-weight:700; cursor:pointer; padding:0; margin-top:0; text-decoration: underline; }
+  table { width:100%; border-collapse:collapse; margin-top:12px; font-size:0.9rem; }
+  th,td { text-align:left; padding:8px 10px; border-bottom:1px solid #eee; }
+  th { color:var(--celeste); }
+  .salir { background:none; border:none; color:var(--acento); font-weight:700; cursor:pointer; padding:0; margin-top:0; text-decoration:underline; }
   .oculto { display:none; }
-  .subtotal { margin-top:10px; font-weight:700; color: var(--azul); }
-  .clave-modificada { color: #aaa; font-style: italic; }
-  .total-actas { margin-top:10px; font-weight:700; color: var(--azul); font-size:0.95rem; }
+  .subtotal,.total-actas { margin-top:10px; font-weight:700; color:var(--azul); }
+  .clave-modificada { color:#aaa; font-style:italic; }
 
   /* Tabs */
-  .tabs { display:flex; gap:8px; margin-bottom:18px; border-bottom:2px solid #eee; padding-bottom:0; }
-  .tab-btn { background:none; border:none; border-bottom:3px solid transparent; padding:8px 16px; margin-top:0; font-weight:700; font-size:0.95rem; color:#888; cursor:pointer; border-radius:0; margin-bottom:-2px; }
-  .tab-btn.activo { color: var(--violeta); border-bottom-color: var(--violeta); }
-  .tab-btn:hover { color: var(--violeta); background:none; }
+  .tabs { display:flex; gap:6px; margin-bottom:18px; border-bottom:2px solid #eee; flex-wrap:wrap; }
+  .tab-btn { background:none; border:none; border-bottom:3px solid transparent; padding:8px 14px; margin-top:0; font-weight:700; font-size:0.9rem; color:#888; cursor:pointer; border-radius:0; margin-bottom:-2px; }
+  .tab-btn.activo { color:var(--violeta); border-bottom-color:var(--violeta); }
+  .tab-btn:hover { color:var(--violeta); background:none; }
 
-  /* Filas de acta manual */
-  .acta-row { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px; }
+  /* Filas manuales */
+  .acta-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
   .acta-row input { margin:0; }
-  .acta-row-label { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .acta-row-label span { font-weight:600; font-size:0.9rem; color: var(--azul); }
+  .acta-row-label { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:6px; }
+  .acta-row-label span { font-weight:600; font-size:0.88rem; color:var(--azul); }
+
+  /* Rango */
+  .rango-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+  .rango-grid label { margin-top:0; }
+  @media(max-width:480px){ .rango-grid { grid-template-columns:1fr; } }
 
   /* Dropzone */
-  .dropzone {
-    border:2px dashed var(--celeste);
-    border-radius:10px;
-    padding:32px 20px;
-    text-align:center;
-    color: var(--celeste);
-    font-weight:600;
-    cursor:pointer;
-    transition: background 0.2s;
-    position:relative;
-  }
-  .dropzone:hover, .dropzone.drag-over { background:#e8f4fd; }
+  .dropzone { border:2px dashed var(--celeste); border-radius:10px; padding:28px 20px; text-align:center; color:var(--celeste); font-weight:600; cursor:pointer; transition:background 0.2s; position:relative; }
+  .dropzone:hover,.dropzone.drag-over { background:#e8f4fd; }
   .dropzone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
   .dropzone .icono { font-size:2rem; display:block; margin-bottom:8px; }
 
-  /* Tabla preview */
   .preview-wrap { margin-top:16px; }
-  .preview-wrap h3 { margin:0 0 8px; font-size:1rem; color: var(--azul); border:none; padding:0; }
-  .resultado-ok { color: #1b4332; font-weight:700; }
-  .resultado-error { color: #9d0208; font-weight:700; }
+  .preview-wrap h3 { margin:0 0 8px; font-size:1rem; color:var(--azul); border:none; padding:0; }
+  .resultado-ok { color:#1b4332; font-weight:700; }
+  .resultado-error { color:#9d0208; font-weight:700; }
 </style>
 </head>
 <body>
-  <header>
-    <div style="display:flex;justify-content:center;align-items:center;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
-      <img src="/MYP.jpg" alt="MYP" style="height:48px;object-fit:contain;border-radius:4px;">
-      <img src="/escmb.png" alt="ESCMB" style="height:48px;object-fit:contain;border-radius:4px;">
-    </div>
-    <h1>Panel · Un Millón de Firmas por la Universidad Pública</h1>
-  </header>
-  <main>
+<header>
+  <div style="display:flex;justify-content:center;align-items:center;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
+    <img src="/MYP.jpg" alt="MYP" style="height:48px;object-fit:contain;border-radius:4px;">
+    <img src="/escmb.png" alt="ESCMB" style="height:48px;object-fit:contain;border-radius:4px;">
+  </div>
+  <h1>Panel · Un Millón de Firmas por la Universidad Pública</h1>
+</header>
+<main>
 
-    <!-- LOGIN -->
-    <section class="panel" id="panel-login">
-      <h2>Iniciar sesión</h2>
-      <label for="login-usuario">Usuario</label>
-      <input id="login-usuario" type="text" autocomplete="username">
-      <label for="login-clave">Clave</label>
-      <input id="login-clave" type="password" autocomplete="current-password">
-      <button onclick="iniciarSesion()">Ingresar</button>
-      <div class="mensaje" id="login-mensaje"></div>
-      <p style="margin-top:18px; font-size:0.85rem; color:var(--celeste);">
-        <a href="/index.html" style="color:var(--celeste);">← Volver a la página principal</a>
-      </p>
+  <!-- LOGIN -->
+  <section class="panel" id="panel-login">
+    <h2>Iniciar sesión</h2>
+    <label for="login-usuario">Usuario</label>
+    <input id="login-usuario" type="text" autocomplete="username">
+    <label for="login-clave">Clave</label>
+    <input id="login-clave" type="password" autocomplete="current-password">
+    <button onclick="iniciarSesion()">Ingresar</button>
+    <div class="mensaje" id="login-mensaje"></div>
+    <p style="margin-top:18px;font-size:0.85rem;color:var(--celeste);">
+      <a href="/index.html" style="color:var(--celeste);">← Volver a la página principal</a>
+    </p>
+  </section>
+
+  <div id="zona-logueada" class="oculto">
+
+    <section class="panel">
+      <h2>Sesión activa: <span id="nombre-usuario"></span> <span id="etiqueta-rol"></span></h2>
+      <button class="salir" onclick="cerrarSesion()">Cerrar sesión</button>
     </section>
 
-    <!-- PANEL LOGUEADO -->
-    <div id="zona-logueada" class="oculto">
+    <!-- PANEL USUARIO -->
+    <section class="panel oculto" id="panel-usuario">
+      <h2>Cargar actas</h2>
+      <p style="font-size:0.9rem;color:var(--celeste);margin-bottom:18px;">No podés repetir un número de acta ya cargado.</p>
 
-      <section class="panel">
-        <h2>Sesión activa: <span id="nombre-usuario"></span> <span id="etiqueta-rol"></span></h2>
-        <button class="salir" onclick="cerrarSesion()">Cerrar sesión</button>
-      </section>
+      <div class="tabs">
+        <button class="tab-btn activo" onclick="mostrarTab('manual')">✏️ Manual (5 filas)</button>
+        <button class="tab-btn" onclick="mostrarTab('rango')">🔢 Por rango</button>
+        <button class="tab-btn" onclick="mostrarTab('excel')">📊 Desde Excel</button>
+      </div>
 
-      <!-- Solo para usuarios -->
-      <section class="panel oculto" id="panel-usuario">
-        <h2>Cargar actas</h2>
-        <p style="font-size:0.9rem; color:var(--celeste); margin-bottom:18px;">No podés repetir un número de acta ya cargado.</p>
-
-        <div class="tabs">
-          <button class="tab-btn activo" onclick="mostrarTab('manual')">✏️ Carga manual</button>
-          <button class="tab-btn" onclick="mostrarTab('excel')">📊 Desde Excel</button>
+      <!-- Tab manual -->
+      <div id="tab-manual">
+        <div class="acta-row-label">
+          <span>N° de acta</span><span>Cantidad de firmantes</span>
         </div>
+        <div id="filas-actas"></div>
+        <button onclick="cargarActasManual()">Guardar actas</button>
+      </div>
 
-        <!-- Tab manual: 5 filas -->
-        <div id="tab-manual">
-          <div class="acta-row-label">
-            <span>N° de acta</span>
-            <span>Cantidad de firmantes</span>
+      <!-- Tab rango -->
+      <div id="tab-rango" class="oculto">
+        <div class="rango-grid" style="margin-top:8px;">
+          <div>
+            <label for="rango-desde">Actas desde</label>
+            <input type="number" id="rango-desde" min="1" step="1" placeholder="Ej: 1">
           </div>
-          <div id="filas-actas"></div>
-          <button onclick="cargarActasManual()">Guardar actas</button>
-        </div>
-
-        <!-- Tab Excel -->
-        <div id="tab-excel" class="oculto">
-          <label>Arrastrá el archivo Excel o hacé click para seleccionarlo:</label>
-          <div class="dropzone" id="dropzone" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="onDrop(event)">
-            <span class="icono">📂</span>
-            Arrastrá el Excel acá o hacé click
-            <input type="file" accept=".xlsx,.xls" onchange="procesarExcel(this.files[0])">
+          <div>
+            <label for="rango-hasta">Hasta</label>
+            <input type="number" id="rango-hasta" min="1" step="1" placeholder="Ej: 20">
           </div>
-
-          <div class="preview-wrap oculto" id="preview-excel">
-            <h3 id="preview-titulo"></h3>
-            <div id="preview-tabla"></div>
-            <button class="secundario" onclick="confirmarCargaExcel()">✅ Confirmar y cargar</button>
-          </div>
-
-          <div class="preview-wrap oculto" id="resultado-excel">
-            <h3>Resultado de la carga:</h3>
-            <div id="resultado-tabla"></div>
+          <div>
+            <label for="rango-firmantes">Firmantes por acta</label>
+            <input type="number" id="rango-firmantes" min="1" step="1" placeholder="Ej: 35">
           </div>
         </div>
+        <button onclick="cargarActasRango()">Guardar rango de actas</button>
+      </div>
 
-        <div class="mensaje" id="acta-mensaje"></div>
-      </section>
-
-      <section class="panel oculto" id="panel-mis-actas">
-        <h2>Mis actas cargadas</h2>
-        <div id="lista-actas">Cargando…</div>
-        <div class="subtotal" id="subtotal"></div>
-      </section>
-
-      <!-- Solo para administradores -->
-      <section class="panel oculto" id="panel-administrador">
-
-        <h2>Crear nuevo usuario</h2>
-        <label for="nuevo-usuario">Usuario</label>
-        <input id="nuevo-usuario" type="text">
-        <label for="nuevo-clave">Clave</label>
-        <input id="nuevo-clave" type="password">
-        <label for="nuevo-institucion">Nombre institucional</label>
-        <input id="nuevo-institucion" type="text" placeholder="Ej: Universidad Nacional de Córdoba">
-        <label for="nuevo-provincia">Provincia</label>
-        <input id="nuevo-provincia" type="text" placeholder="Ej: Córdoba">
-        <button class="secundario" onclick="crearUsuario()">Crear cuenta</button>
-        <div class="mensaje" id="crear-mensaje"></div>
-
-        <h3>Usuarios registrados</h3>
-        <div id="lista-usuarios">Cargando…</div>
-
-        <h3>Actas cargadas por usuario</h3>
-        <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-          <select id="filtro-usuario" onchange="filtrarActas()" style="padding:8px 12px;border:1px solid #ccc;border-radius:8px;font-size:0.95rem;">
-            <option value="">Todos los usuarios</option>
-          </select>
-          <button class="exportar" style="margin-top:0;" onclick="exportarCSV()">Exportar CSV</button>
+      <!-- Tab excel -->
+      <div id="tab-excel" class="oculto">
+        <label>Arrastrá el archivo Excel o hacé click para seleccionarlo:</label>
+        <div class="dropzone" id="dropzone"
+          ondragover="event.preventDefault();this.classList.add('drag-over')"
+          ondragleave="this.classList.remove('drag-over')"
+          ondrop="onDrop(event)">
+          <span class="icono">📂</span>
+          Arrastrá el Excel acá o hacé click
+          <input type="file" accept=".xlsx,.xls" onchange="procesarExcel(this.files[0])">
         </div>
-        <div id="lista-todas-actas" style="margin-top:14px;">Cargando…</div>
-        <div class="total-actas" id="total-todas-actas"></div>
+        <div class="preview-wrap oculto" id="preview-excel">
+          <h3 id="preview-titulo"></h3>
+          <div id="preview-tabla"></div>
+          <button class="secundario" onclick="confirmarCargaExcel()">✅ Confirmar y cargar</button>
+        </div>
+        <div class="preview-wrap oculto" id="resultado-excel">
+          <h3>Resultado de la carga:</h3>
+          <div id="resultado-tabla"></div>
+        </div>
+      </div>
 
-      </section>
+      <div class="mensaje" id="acta-mensaje"></div>
+    </section>
 
-      <!-- Cambiar contraseña -->
-      <section class="panel">
-        <h2>Cambiar contraseña</h2>
-        <label for="clave-actual">Clave actual</label>
-        <input id="clave-actual" type="password">
-        <label for="clave-nueva">Nueva clave</label>
-        <input id="clave-nueva" type="password">
-        <label for="clave-nueva2">Repetir nueva clave</label>
-        <input id="clave-nueva2" type="password">
-        <button class="secundario" onclick="cambiarClave()">Actualizar clave</button>
-        <div class="mensaje" id="clave-mensaje"></div>
-      </section>
+    <section class="panel oculto" id="panel-mis-actas">
+      <h2>Mis actas cargadas</h2>
+      <div id="lista-actas">Cargando…</div>
+      <div class="subtotal" id="subtotal"></div>
+    </section>
 
-    </div>
-  </main>
+    <!-- PANEL ADMINISTRADOR -->
+    <section class="panel oculto" id="panel-administrador">
 
-<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.20</div>
+      <h2>Crear nuevo usuario</h2>
+      <label for="nuevo-usuario">Usuario</label>
+      <input id="nuevo-usuario" type="text">
+      <label for="nuevo-clave">Clave</label>
+      <input id="nuevo-clave" type="password">
+      <label for="nuevo-institucion">Nombre institucional</label>
+      <input id="nuevo-institucion" type="text" placeholder="Ej: Universidad Nacional de Córdoba">
+      <label for="nuevo-provincia">Provincia</label>
+      <input id="nuevo-provincia" type="text" placeholder="Ej: Córdoba">
+      <label for="nuevo-contacto">Contacto <small style="font-weight:400;color:#888;">(opcional — solo uno por provincia)</small></label>
+      <input id="nuevo-contacto" type="text" placeholder="Ej: Juan Pérez · 351-123-4567">
+      <button class="secundario" onclick="crearUsuario()">Crear cuenta</button>
+      <div class="mensaje" id="crear-mensaje"></div>
+
+      <h3>Usuarios registrados</h3>
+      <div id="lista-usuarios">Cargando…</div>
+
+      <h3>Actas cargadas por usuario</h3>
+      <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <select id="filtro-usuario" onchange="filtrarActas()" style="padding:8px 12px;border:1px solid #ccc;border-radius:8px;font-size:0.95rem;">
+          <option value="">Todos los usuarios</option>
+        </select>
+        <button class="exportar" style="margin-top:0;" onclick="exportarCSV()">Exportar CSV</button>
+      </div>
+      <div id="lista-todas-actas" style="margin-top:14px;">Cargando…</div>
+      <div class="total-actas" id="total-todas-actas"></div>
+
+    </section>
+
+    <!-- CAMBIAR CONTRASEÑA -->
+    <section class="panel">
+      <h2>Cambiar contraseña</h2>
+      <label for="clave-actual">Clave actual</label>
+      <input id="clave-actual" type="password">
+      <label for="clave-nueva">Nueva clave</label>
+      <input id="clave-nueva" type="password">
+      <label for="clave-nueva2">Repetir nueva clave</label>
+      <input id="clave-nueva2" type="password">
+      <button class="secundario" onclick="cambiarClave()">Actualizar clave</button>
+      <div class="mensaje" id="clave-mensaje"></div>
+    </section>
+
+  </div>
+</main>
+
+<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.30</div>
 
 <script>
   const TOKEN_KEY = 'firmas_token';
@@ -206,375 +220,286 @@
   let _todasLasActas = [];
   let _actasExcel = [];
 
-  function guardarSesion(token, username, rol) {
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(DATOS_KEY, JSON.stringify({ username, rol }));
-  }
-  function obtenerToken() { return localStorage.getItem(TOKEN_KEY); }
-  function obtenerDatos() {
-    try { return JSON.parse(localStorage.getItem(DATOS_KEY) || 'null'); } catch { return null; }
-  }
-  function cerrarSesion() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(DATOS_KEY);
-    location.reload();
-  }
-
-  function mostrarMensaje(id, texto, tipo) {
-    const el = document.getElementById(id);
-    el.textContent = texto;
-    el.className = 'mensaje ' + tipo;
-  }
+  function guardarSesion(t,u,r){ localStorage.setItem(TOKEN_KEY,t); localStorage.setItem(DATOS_KEY,JSON.stringify({username:u,rol:r})); }
+  function obtenerToken(){ return localStorage.getItem(TOKEN_KEY); }
+  function obtenerDatos(){ try{ return JSON.parse(localStorage.getItem(DATOS_KEY)||'null'); }catch{ return null; } }
+  function cerrarSesion(){ localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(DATOS_KEY); location.reload(); }
+  function mostrarMensaje(id,texto,tipo){ const el=document.getElementById(id); el.textContent=texto; el.className='mensaje '+tipo; }
 
   // ── Tabs ──
   function mostrarTab(nombre) {
-    document.getElementById('tab-manual').classList.toggle('oculto', nombre !== 'manual');
-    document.getElementById('tab-excel').classList.toggle('oculto', nombre !== 'excel');
-    document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-      btn.classList.toggle('activo', (nombre === 'manual' && i === 0) || (nombre === 'excel' && i === 1));
+    ['manual','rango','excel'].forEach(n => document.getElementById('tab-'+n).classList.toggle('oculto', n !== nombre));
+    document.querySelectorAll('.tab-btn').forEach((btn,i) => {
+      btn.classList.toggle('activo', ['manual','rango','excel'][i] === nombre);
     });
     document.getElementById('acta-mensaje').className = 'mensaje';
   }
 
-  // ── Iniciar sesión ──
+  // ── Login ──
   async function iniciarSesion() {
     const username = document.getElementById('login-usuario').value.trim();
     const password = document.getElementById('login-clave').value;
-    if (!username || !password) {
-      mostrarMensaje('login-mensaje', 'Completá usuario y clave.', 'error'); return;
-    }
+    if (!username||!password){ mostrarMensaje('login-mensaje','Completá usuario y clave.','error'); return; }
     try {
-      const resp = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
+      const resp = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
       const datos = await resp.json();
-      if (!resp.ok) { mostrarMensaje('login-mensaje', datos.error || 'No se pudo iniciar sesión.', 'error'); return; }
-      guardarSesion(datos.token, datos.username, datos.rol);
+      if (!resp.ok){ mostrarMensaje('login-mensaje',datos.error||'No se pudo iniciar sesión.','error'); return; }
+      guardarSesion(datos.token,datos.username,datos.rol);
       location.reload();
-    } catch (e) {
-      mostrarMensaje('login-mensaje', 'Error de conexión con el servidor.', 'error');
-    }
+    } catch(e){ mostrarMensaje('login-mensaje','Error de conexión.','error'); }
   }
 
   // ── Cambiar clave ──
   async function cambiarClave() {
-    const password_actual = document.getElementById('clave-actual').value;
-    const password_nueva = document.getElementById('clave-nueva').value;
-    const password_nueva2 = document.getElementById('clave-nueva2').value;
-    if (!password_actual || !password_nueva || !password_nueva2) {
-      mostrarMensaje('clave-mensaje', 'Completá todos los campos.', 'error'); return;
-    }
-    if (password_nueva !== password_nueva2) {
-      mostrarMensaje('clave-mensaje', 'Las nuevas claves no coinciden.', 'error'); return;
-    }
+    const password_actual=document.getElementById('clave-actual').value;
+    const password_nueva=document.getElementById('clave-nueva').value;
+    const password_nueva2=document.getElementById('clave-nueva2').value;
+    if (!password_actual||!password_nueva||!password_nueva2){ mostrarMensaje('clave-mensaje','Completá todos los campos.','error'); return; }
+    if (password_nueva!==password_nueva2){ mostrarMensaje('clave-mensaje','Las nuevas claves no coinciden.','error'); return; }
     try {
-      const resp = await fetch('/api/password', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + obtenerToken() },
-        body: JSON.stringify({ password_actual, password_nueva })
-      });
-      const datos = await resp.json();
-      if (!resp.ok) { mostrarMensaje('clave-mensaje', datos.error || 'No se pudo cambiar la clave.', 'error'); return; }
-      mostrarMensaje('clave-mensaje', 'Clave actualizada. Volvé a iniciar sesión.', 'ok');
-      document.getElementById('clave-actual').value = '';
-      document.getElementById('clave-nueva').value = '';
-      document.getElementById('clave-nueva2').value = '';
-      setTimeout(cerrarSesion, 2000);
-    } catch (e) {
-      mostrarMensaje('clave-mensaje', 'Error de conexión con el servidor.', 'error');
-    }
+      const resp=await fetch('/api/password',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+obtenerToken()},body:JSON.stringify({password_actual,password_nueva})});
+      const datos=await resp.json();
+      if (!resp.ok){ mostrarMensaje('clave-mensaje',datos.error||'Error.','error'); return; }
+      mostrarMensaje('clave-mensaje','Clave actualizada. Volvé a iniciar sesión.','ok');
+      document.getElementById('clave-actual').value='';
+      document.getElementById('clave-nueva').value='';
+      document.getElementById('clave-nueva2').value='';
+      setTimeout(cerrarSesion,2000);
+    } catch(e){ mostrarMensaje('clave-mensaje','Error de conexión.','error'); }
   }
 
-  // ── Carga manual (5 filas) ──
+  // ── Carga manual 5 filas ──
   function generarFilasActas() {
-    const cont = document.getElementById('filas-actas');
-    cont.innerHTML = '';
-    for (let i = 0; i < 5; i++) {
-      const div = document.createElement('div');
-      div.className = 'acta-row';
-      div.innerHTML = `
-        <input type="text" id="acta-num-${i}" placeholder="Ej: ${i + 1}">
-        <input type="number" id="acta-cant-${i}" min="1" step="1" placeholder="Ej: 35">
-      `;
+    const cont=document.getElementById('filas-actas');
+    cont.innerHTML='';
+    for(let i=0;i<5;i++){
+      const div=document.createElement('div');
+      div.className='acta-row';
+      div.innerHTML=`<input type="text" id="acta-num-${i}" placeholder="Ej: ${i+1}"><input type="number" id="acta-cant-${i}" min="1" step="1" placeholder="Firmantes">`;
       cont.appendChild(div);
     }
   }
-
   async function cargarActasManual() {
-    const actas = [];
-    for (let i = 0; i < 5; i++) {
-      const num = document.getElementById(`acta-num-${i}`).value.trim();
-      const cant = document.getElementById(`acta-cant-${i}`).value.trim();
-      if (num && cant) actas.push({ numero_acta: num, cantidad_firmantes: parseInt(cant, 10) });
+    const actas=[];
+    for(let i=0;i<5;i++){
+      const num=document.getElementById(`acta-num-${i}`).value.trim();
+      const cant=document.getElementById(`acta-cant-${i}`).value.trim();
+      if(num&&cant) actas.push({numero_acta:num,cantidad_firmantes:parseInt(cant,10)});
     }
-    if (actas.length === 0) {
-      mostrarMensaje('acta-mensaje', 'Completá al menos una fila con número y cantidad.', 'error'); return;
-    }
+    if(actas.length===0){ mostrarMensaje('acta-mensaje','Completá al menos una fila.','error'); return; }
     await enviarActasBulk(actas);
   }
 
-  // ── Carga Excel ──
-  function onDrop(e) {
-    e.preventDefault();
-    document.getElementById('dropzone').classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file) procesarExcel(file);
+  // ── Carga por rango ──
+  async function cargarActasRango() {
+    const desde=parseInt(document.getElementById('rango-desde').value,10);
+    const hasta=parseInt(document.getElementById('rango-hasta').value,10);
+    const firmantes=parseInt(document.getElementById('rango-firmantes').value,10);
+    if(!desde||!hasta||!firmantes){ mostrarMensaje('acta-mensaje','Completá todos los campos del rango.','error'); return; }
+    if(desde>hasta){ mostrarMensaje('acta-mensaje','"Desde" debe ser menor o igual a "Hasta".','error'); return; }
+    if(hasta-desde>199){ mostrarMensaje('acta-mensaje','El rango no puede superar 200 actas.','error'); return; }
+    const actas=[];
+    for(let i=desde;i<=hasta;i++) actas.push({numero_acta:String(i),cantidad_firmantes:firmantes});
+    await enviarActasBulk(actas);
   }
 
+  // ── Excel ──
+  function onDrop(e){
+    e.preventDefault();
+    document.getElementById('dropzone').classList.remove('drag-over');
+    const file=e.dataTransfer.files[0];
+    if(file) procesarExcel(file);
+  }
   function procesarExcel(file) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const data = new Uint8Array(e.target.result);
-      const wb = XLSX.read(data, { type: 'array' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
-
-      // Buscar fila de encabezados (ACTA / FIRMAS)
-      let headerRow = -1;
-      for (let i = 0; i < rows.length; i++) {
-        const r = rows[i];
-        if (r && String(r[0] || '').toUpperCase().trim() === 'ACTA' &&
-            String(r[1] || '').toUpperCase().trim() === 'FIRMAS') {
-          headerRow = i;
-          break;
-        }
+    if(!file) return;
+    const reader=new FileReader();
+    reader.onload=function(e){
+      const data=new Uint8Array(e.target.result);
+      const wb=XLSX.read(data,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+      let headerRow=-1;
+      for(let i=0;i<rows.length;i++){
+        const r=rows[i];
+        if(r&&String(r[0]||'').toUpperCase().trim()==='ACTA'&&String(r[1]||'').toUpperCase().trim()==='FIRMAS'){ headerRow=i; break; }
       }
-      if (headerRow === -1) {
-        mostrarMensaje('acta-mensaje', 'No se encontró la fila de encabezados ACTA / FIRMAS en el Excel.', 'error');
-        return;
+      if(headerRow===-1){ mostrarMensaje('acta-mensaje','No se encontró la fila ACTA / FIRMAS en el Excel.','error'); return; }
+      _actasExcel=[];
+      for(let i=headerRow+1;i<rows.length;i++){
+        const r=rows[i];
+        if(!r) continue;
+        const num=r[0]; const cant=r[1];
+        if(num===null||num===undefined||num==='') continue;
+        if(cant===null||cant===undefined||cant===''||Number(cant)<=0) continue;
+        _actasExcel.push({numero_acta:String(num),cantidad_firmantes:Number(cant)});
       }
-
-      // Leer datos: filtrar filas con FIRMAS vacío o cero
-      _actasExcel = [];
-      for (let i = headerRow + 1; i < rows.length; i++) {
-        const r = rows[i];
-        if (!r) continue;
-        const num = r[0];
-        const cant = r[1];
-        if (num === null || num === undefined || num === '') continue;
-        if (cant === null || cant === undefined || cant === '' || Number(cant) <= 0) continue;
-        _actasExcel.push({ numero_acta: String(num), cantidad_firmantes: Number(cant) });
-      }
-
-      if (_actasExcel.length === 0) {
-        mostrarMensaje('acta-mensaje', 'El Excel no tiene filas con datos completos (FIRMAS vacío en todas).', 'error');
-        return;
-      }
-
-      // Mostrar preview
-      document.getElementById('preview-titulo').textContent =
-        `Se encontraron ${_actasExcel.length} acta(s) con firmas. Verificá antes de confirmar:`;
-      let html = '<table><tr><th>N° de acta</th><th>Firmantes</th></tr>';
-      for (const a of _actasExcel) {
-        html += `<tr><td>${a.numero_acta}</td><td>${a.cantidad_firmantes}</td></tr>`;
-      }
-      html += '</table>';
-      document.getElementById('preview-tabla').innerHTML = html;
+      if(_actasExcel.length===0){ mostrarMensaje('acta-mensaje','El Excel no tiene filas con datos completos.','error'); return; }
+      document.getElementById('preview-titulo').textContent=`Se encontraron ${_actasExcel.length} acta(s). Verificá antes de confirmar:`;
+      let html='<table><tr><th>N° de acta</th><th>Firmantes</th></tr>';
+      for(const a of _actasExcel) html+=`<tr><td>${a.numero_acta}</td><td>${a.cantidad_firmantes}</td></tr>`;
+      html+='</table>';
+      document.getElementById('preview-tabla').innerHTML=html;
       document.getElementById('preview-excel').classList.remove('oculto');
       document.getElementById('resultado-excel').classList.add('oculto');
     };
     reader.readAsArrayBuffer(file);
   }
-
-  async function confirmarCargaExcel() {
-    if (_actasExcel.length === 0) return;
-    await enviarActasBulk(_actasExcel, true);
+  async function confirmarCargaExcel(){
+    if(_actasExcel.length===0) return;
+    await enviarActasBulk(_actasExcel,true);
   }
 
   // ── Envío bulk ──
-  async function enviarActasBulk(actas, esExcel = false) {
+  async function enviarActasBulk(actas,esExcel=false){
     try {
-      const resp = await fetch('/api/actas/bulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + obtenerToken() },
-        body: JSON.stringify({ actas })
-      });
-      const datos = await resp.json();
-      if (!resp.ok) { mostrarMensaje('acta-mensaje', datos.error || 'Error al cargar.', 'error'); return; }
-
-      const ok = datos.resultados.filter(r => r.ok).length;
-      const errores = datos.resultados.filter(r => !r.ok).length;
-
-      if (esExcel) {
-        // Mostrar tabla de resultados
-        let html = '<table><tr><th>N° de acta</th><th>Firmantes</th><th>Estado</th></tr>';
-        for (const r of datos.resultados) {
-          const estado = r.ok
-            ? '<span class="resultado-ok">✅ Guardada</span>'
-            : `<span class="resultado-error">❌ ${r.error}</span>`;
-          html += `<tr><td>${r.numero_acta}</td><td>${r.cantidad_firmantes || '-'}</td><td>${estado}</td></tr>`;
+      const resp=await fetch('/api/actas/bulk',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+obtenerToken()},body:JSON.stringify({actas})});
+      const datos=await resp.json();
+      if(!resp.ok){ mostrarMensaje('acta-mensaje',datos.error||'Error al cargar.','error'); return; }
+      const ok=datos.resultados.filter(r=>r.ok).length;
+      const errores=datos.resultados.filter(r=>!r.ok).length;
+      if(esExcel){
+        let html='<table><tr><th>N° de acta</th><th>Firmantes</th><th>Estado</th></tr>';
+        for(const r of datos.resultados){
+          const estado=r.ok?'<span class="resultado-ok">✅ Guardada</span>':`<span class="resultado-error">❌ ${r.error}</span>`;
+          html+=`<tr><td>${r.numero_acta}</td><td>${r.cantidad_firmantes||'-'}</td><td>${estado}</td></tr>`;
         }
-        html += '</table>';
-        document.getElementById('resultado-tabla').innerHTML = html;
+        html+='</table>';
+        document.getElementById('resultado-tabla').innerHTML=html;
         document.getElementById('resultado-excel').classList.remove('oculto');
         document.getElementById('preview-excel').classList.add('oculto');
-        _actasExcel = [];
+        _actasExcel=[];
       } else {
-        // Mensaje resumen en carga manual
-        const msg = errores === 0
-          ? `${ok} acta(s) guardada(s) correctamente.`
-          : `${ok} guardada(s), ${errores} con error (actas duplicadas o datos inválidos).`;
-        mostrarMensaje('acta-mensaje', msg, errores === 0 ? 'ok' : 'error');
-        generarFilasActas();
+        const msg=errores===0?`${ok} acta(s) guardada(s).`:`${ok} guardada(s), ${errores} con error (duplicadas o inválidas).`;
+        mostrarMensaje('acta-mensaje',msg,errores===0?'ok':'error');
+        if(document.getElementById('tab-rango').classList.contains('oculto')===false){
+          document.getElementById('rango-desde').value='';
+          document.getElementById('rango-hasta').value='';
+          document.getElementById('rango-firmantes').value='';
+        } else {
+          generarFilasActas();
+        }
       }
       cargarListaActas();
-    } catch (e) {
-      mostrarMensaje('acta-mensaje', 'Error de conexión con el servidor.', 'error');
-    }
+    } catch(e){ mostrarMensaje('acta-mensaje','Error de conexión.','error'); }
   }
 
-  async function cargarListaActas() {
+  async function cargarListaActas(){
     try {
-      const resp = await fetch('/api/actas', { headers: { 'Authorization': 'Bearer ' + obtenerToken() } });
-      const datos = await resp.json();
-      if (!resp.ok) { document.getElementById('lista-actas').textContent = datos.error || 'No se pudo cargar la lista.'; return; }
-      if (datos.actas.length === 0) {
-        document.getElementById('lista-actas').textContent = 'Todavía no cargaste ninguna acta.';
+      const resp=await fetch('/api/actas',{headers:{'Authorization':'Bearer '+obtenerToken()}});
+      const datos=await resp.json();
+      if(!resp.ok){ document.getElementById('lista-actas').textContent=datos.error||'Error.'; return; }
+      if(datos.actas.length===0){
+        document.getElementById('lista-actas').textContent='Todavía no cargaste ninguna acta.';
       } else {
-        let html = '<table><tr><th>N° de acta</th><th>Firmantes</th><th>Fecha</th></tr>';
-        for (const a of datos.actas) {
-          html += `<tr><td>${a.numero_acta}</td><td>${a.cantidad_firmantes}</td><td>${a.creado_en}</td></tr>`;
-        }
-        html += '</table>';
-        document.getElementById('lista-actas').innerHTML = html;
+        let html='<table><tr><th>N° de acta</th><th>Firmantes</th><th>Fecha</th></tr>';
+        for(const a of datos.actas) html+=`<tr><td>${a.numero_acta}</td><td>${a.cantidad_firmantes}</td><td>${a.creado_en}</td></tr>`;
+        html+='</table>';
+        document.getElementById('lista-actas').innerHTML=html;
       }
-      document.getElementById('subtotal').textContent = `Subtotal: ${datos.subtotal.toLocaleString('es-AR')} firmas`;
-    } catch (e) {
-      document.getElementById('lista-actas').textContent = 'Error de conexión con el servidor.';
-    }
+      document.getElementById('subtotal').textContent=`Subtotal: ${datos.subtotal.toLocaleString('es-AR')} firmas`;
+    } catch(e){ document.getElementById('lista-actas').textContent='Error de conexión.'; }
   }
 
   // ── Crear usuario ──
-  async function crearUsuario() {
-    const username = document.getElementById('nuevo-usuario').value.trim();
-    const password = document.getElementById('nuevo-clave').value;
-    if (!username || !password) {
-      mostrarMensaje('crear-mensaje', 'Completá usuario y clave.', 'error'); return;
-    }
+  async function crearUsuario(){
+    const username=document.getElementById('nuevo-usuario').value.trim();
+    const password=document.getElementById('nuevo-clave').value;
+    if(!username||!password){ mostrarMensaje('crear-mensaje','Completá usuario y clave.','error'); return; }
     try {
-      const resp = await fetch('/api/administradores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + obtenerToken() },
-        body: JSON.stringify({
-          username,
-          password,
-          nombre_institucion: document.getElementById('nuevo-institucion').value.trim(),
-          provincia: document.getElementById('nuevo-provincia').value.trim()
-        })
-      });
-      const datos = await resp.json();
-      if (!resp.ok) { mostrarMensaje('crear-mensaje', datos.error || 'No se pudo crear la cuenta.', 'error'); return; }
-      mostrarMensaje('crear-mensaje', 'Cuenta creada correctamente.', 'ok');
-      document.getElementById('nuevo-usuario').value = '';
-      document.getElementById('nuevo-clave').value = '';
-      document.getElementById('nuevo-institucion').value = '';
-      document.getElementById('nuevo-provincia').value = '';
+      const resp=await fetch('/api/administradores',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+obtenerToken()},
+        body:JSON.stringify({
+          username,password,
+          nombre_institucion:document.getElementById('nuevo-institucion').value.trim(),
+          provincia:document.getElementById('nuevo-provincia').value.trim(),
+          contacto:document.getElementById('nuevo-contacto').value.trim()
+        })});
+      const datos=await resp.json();
+      if(!resp.ok){ mostrarMensaje('crear-mensaje',datos.error||'No se pudo crear la cuenta.','error'); return; }
+      mostrarMensaje('crear-mensaje','Cuenta creada correctamente.','ok');
+      document.getElementById('nuevo-usuario').value='';
+      document.getElementById('nuevo-clave').value='';
+      document.getElementById('nuevo-institucion').value='';
+      document.getElementById('nuevo-provincia').value='';
+      document.getElementById('nuevo-contacto').value='';
       cargarListaUsuarios();
-    } catch (e) {
-      mostrarMensaje('crear-mensaje', 'Error de conexión con el servidor.', 'error');
-    }
+    } catch(e){ mostrarMensaje('crear-mensaje','Error de conexión.','error'); }
   }
 
-  async function cargarListaUsuarios() {
+  async function cargarListaUsuarios(){
     try {
-      const resp = await fetch('/api/usuarios', { headers: { 'Authorization': 'Bearer ' + obtenerToken() } });
-      const datos = await resp.json();
-      if (!resp.ok) { document.getElementById('lista-usuarios').textContent = 'No se pudo cargar la lista.'; return; }
-      if (datos.usuarios.length === 0) {
-        document.getElementById('lista-usuarios').textContent = 'Todavía no hay usuarios registrados.';
+      const resp=await fetch('/api/usuarios',{headers:{'Authorization':'Bearer '+obtenerToken()}});
+      const datos=await resp.json();
+      if(!resp.ok){ document.getElementById('lista-usuarios').textContent='Error.'; return; }
+      if(datos.usuarios.length===0){
+        document.getElementById('lista-usuarios').textContent='Todavía no hay usuarios registrados.';
       } else {
-        let html = '<table><tr><th>Usuario</th><th>Institución</th><th>Provincia</th><th>Clave</th></tr>';
-        for (const u of datos.usuarios) {
-          const clave = u.password_visible
-            ? u.password_visible
-            : '<span class="clave-modificada">modificada por el usuario</span>';
-          const inst = u.nombre_institucion || '<span class="clave-modificada">-</span>';
-          const prov = u.provincia || '<span class="clave-modificada">-</span>';
-          html += `<tr><td>${u.username}</td><td>${inst}</td><td>${prov}</td><td>${clave}</td></tr>`;
+        let html='<table><tr><th>Usuario</th><th>Institución</th><th>Provincia</th><th>Contacto</th><th>Clave</th></tr>';
+        for(const u of datos.usuarios){
+          const clave=u.password_visible?u.password_visible:'<span class="clave-modificada">modificada</span>';
+          const inst=u.nombre_institucion||'<span class="clave-modificada">-</span>';
+          const prov=u.provincia||'<span class="clave-modificada">-</span>';
+          const cont=u.contacto||'<span class="clave-modificada">-</span>';
+          html+=`<tr><td>${u.username}</td><td>${inst}</td><td>${prov}</td><td>${cont}</td><td>${clave}</td></tr>`;
         }
-        html += '</table>';
-        document.getElementById('lista-usuarios').innerHTML = html;
+        html+='</table>';
+        document.getElementById('lista-usuarios').innerHTML=html;
       }
-    } catch (e) {
-      document.getElementById('lista-usuarios').textContent = 'Error de conexión con el servidor.';
-    }
+    } catch(e){ document.getElementById('lista-usuarios').textContent='Error de conexión.'; }
   }
 
-  async function cargarTodasLasActas() {
+  async function cargarTodasLasActas(){
     try {
-      const resp = await fetch('/api/admin/actas', { headers: { 'Authorization': 'Bearer ' + obtenerToken() } });
-      const datos = await resp.json();
-      if (!resp.ok) { document.getElementById('lista-todas-actas').textContent = 'No se pudo cargar.'; return; }
-      _todasLasActas = datos.actas;
-      const sel = document.getElementById('filtro-usuario');
-      const usuariosUnicos = [...new Set(datos.actas.map(a => a.username))].sort();
-      sel.innerHTML = '<option value="">Todos los usuarios</option>';
-      usuariosUnicos.forEach(u => {
-        const opt = document.createElement('option');
-        opt.value = u; opt.textContent = u;
-        sel.appendChild(opt);
-      });
+      const resp=await fetch('/api/admin/actas',{headers:{'Authorization':'Bearer '+obtenerToken()}});
+      const datos=await resp.json();
+      if(!resp.ok){ document.getElementById('lista-todas-actas').textContent='Error.'; return; }
+      _todasLasActas=datos.actas;
+      const sel=document.getElementById('filtro-usuario');
+      const unicos=[...new Set(datos.actas.map(a=>a.username))].sort();
+      sel.innerHTML='<option value="">Todos los usuarios</option>';
+      unicos.forEach(u=>{ const o=document.createElement('option'); o.value=u; o.textContent=u; sel.appendChild(o); });
       filtrarActas();
-    } catch (e) {
-      document.getElementById('lista-todas-actas').textContent = 'Error de conexión con el servidor.';
-    }
+    } catch(e){ document.getElementById('lista-todas-actas').textContent='Error de conexión.'; }
   }
 
-  function filtrarActas() {
-    const filtro = document.getElementById('filtro-usuario').value;
-    const actas = filtro ? _todasLasActas.filter(a => a.username === filtro) : _todasLasActas;
-    if (actas.length === 0) {
-      document.getElementById('lista-todas-actas').textContent = 'No hay actas para mostrar.';
-      document.getElementById('total-todas-actas').textContent = '';
-      return;
-    }
-    let html = '<table><tr><th>Usuario</th><th>Provincia</th><th>N° de acta</th><th>Firmantes</th><th>Fecha</th></tr>';
-    let total = 0;
-    for (const a of actas) {
-      total += Number(a.cantidad_firmantes);
-      html += `<tr><td>${a.username}</td><td>${a.provincia || '-'}</td><td>${a.numero_acta}</td><td>${a.cantidad_firmantes}</td><td>${a.creado_en}</td></tr>`;
-    }
-    html += '</table>';
-    document.getElementById('lista-todas-actas').innerHTML = html;
-    const label = filtro ? `Subtotal ${filtro}` : 'Total general';
-    document.getElementById('total-todas-actas').textContent = `${label}: ${total.toLocaleString('es-AR')} firmas`;
+  function filtrarActas(){
+    const filtro=document.getElementById('filtro-usuario').value;
+    const actas=filtro?_todasLasActas.filter(a=>a.username===filtro):_todasLasActas;
+    if(actas.length===0){ document.getElementById('lista-todas-actas').textContent='No hay actas.'; document.getElementById('total-todas-actas').textContent=''; return; }
+    let html='<table><tr><th>Usuario</th><th>Provincia</th><th>N° de acta</th><th>Firmantes</th><th>Fecha</th></tr>';
+    let total=0;
+    for(const a of actas){ total+=Number(a.cantidad_firmantes); html+=`<tr><td>${a.username}</td><td>${a.provincia||'-'}</td><td>${a.numero_acta}</td><td>${a.cantidad_firmantes}</td><td>${a.creado_en}</td></tr>`; }
+    html+='</table>';
+    document.getElementById('lista-todas-actas').innerHTML=html;
+    const label=filtro?`Subtotal ${filtro}`:'Total general';
+    document.getElementById('total-todas-actas').textContent=`${label}: ${total.toLocaleString('es-AR')} firmas`;
   }
 
-  function exportarCSV() {
-    if (_todasLasActas.length === 0) { alert('No hay actas para exportar.'); return; }
-    const encabezado = 'Usuario,Provincia,N° de acta,Firmantes,Fecha';
-    const filas = _todasLasActas.map(a =>
-      `${a.username},${a.provincia || ''},${a.numero_acta},${a.cantidad_firmantes},"${a.creado_en}"`
-    );
-    const csv = '﻿' + [encabezado, ...filas].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'actas_firmas.csv';
-    link.click();
+  function exportarCSV(){
+    if(_todasLasActas.length===0){ alert('No hay actas para exportar.'); return; }
+    const enc='Usuario,Provincia,N° de acta,Firmantes,Fecha';
+    const filas=_todasLasActas.map(a=>`${a.username},${a.provincia||''},${a.numero_acta},${a.cantidad_firmantes},"${a.creado_en}"`);
+    const csv='﻿'+[enc,...filas].join('\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement('a');
+    link.href=url; link.download='actas_firmas.csv'; link.click();
     URL.revokeObjectURL(url);
   }
 
-  (function init() {
-    const token = obtenerToken();
-    const datosUsuario = obtenerDatos();
-    if (token && datosUsuario) {
+  (function init(){
+    const token=obtenerToken();
+    const datosUsuario=obtenerDatos();
+    if(token&&datosUsuario){
       document.getElementById('panel-login').classList.add('oculto');
       document.getElementById('zona-logueada').classList.remove('oculto');
-      document.getElementById('nombre-usuario').textContent = datosUsuario.username;
-      document.getElementById('etiqueta-rol').textContent =
-        datosUsuario.rol === 'administrador' ? '(administrador)' : '(usuario)';
-
-      if (datosUsuario.rol === 'usuario') {
+      document.getElementById('nombre-usuario').textContent=datosUsuario.username;
+      document.getElementById('etiqueta-rol').textContent=datosUsuario.rol==='administrador'?'(administrador)':'(usuario)';
+      if(datosUsuario.rol==='usuario'){
         document.getElementById('panel-usuario').classList.remove('oculto');
         document.getElementById('panel-mis-actas').classList.remove('oculto');
         generarFilasActas();
         cargarListaActas();
-      } else if (datosUsuario.rol === 'administrador') {
+      } else if(datosUsuario.rol==='administrador'){
         document.getElementById('panel-administrador').classList.remove('oculto');
         cargarListaUsuarios();
         cargarTodasLasActas();

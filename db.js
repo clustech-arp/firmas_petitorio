@@ -24,6 +24,7 @@ async function inicializar() {
   try { await db.execute("ALTER TABLE administradores ADD COLUMN password_visible TEXT"); } catch (e) {}
   try { await db.execute("ALTER TABLE administradores ADD COLUMN nombre_institucion TEXT"); } catch (e) {}
   try { await db.execute("ALTER TABLE administradores ADD COLUMN provincia TEXT"); } catch (e) {}
+  try { await db.execute("ALTER TABLE administradores ADD COLUMN contacto TEXT"); } catch (e) {}
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS actas (
@@ -43,24 +44,15 @@ async function inicializar() {
     )
   `);
 
-  const meta = await db.execute({
-    sql: "SELECT valor FROM configuracion WHERE clave = 'meta_firmas'",
-    args: []
-  });
+  const meta = await db.execute({ sql: "SELECT valor FROM configuracion WHERE clave = 'meta_firmas'", args: [] });
   if (meta.rows.length === 0) {
-    await db.execute({
-      sql: "INSERT INTO configuracion (clave, valor) VALUES ('meta_firmas', '1000000')",
-      args: []
-    });
+    await db.execute({ sql: "INSERT INTO configuracion (clave, valor) VALUES ('meta_firmas', '1000000')", args: [] });
   }
 
   await db.execute("UPDATE administradores SET rol = 'administrador' WHERE rol = 'superadmin'");
   await db.execute("UPDATE administradores SET rol = 'usuario' WHERE rol = 'admin'");
 
-  const mapadres = await db.execute({
-    sql: "SELECT id FROM administradores WHERE username = 'mapadres'",
-    args: []
-  });
+  const mapadres = await db.execute({ sql: "SELECT id FROM administradores WHERE username = 'mapadres'", args: [] });
   if (mapadres.rows.length === 0) {
     const hash = bcrypt.hashSync('quefestival!', 10);
     await db.execute({
@@ -70,10 +62,7 @@ async function inicializar() {
     console.log('Cuenta mapadres creada');
   }
 
-  const admins = await db.execute({
-    sql: "SELECT id FROM administradores WHERE rol = 'administrador'",
-    args: []
-  });
+  const admins = await db.execute({ sql: "SELECT id FROM administradores WHERE rol = 'administrador'", args: [] });
   if (admins.rows.length === 0) {
     const hash = bcrypt.hashSync('cambiar123', 10);
     await db.execute({
