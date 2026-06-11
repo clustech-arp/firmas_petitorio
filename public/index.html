@@ -198,7 +198,7 @@
 
   <footer>Conteo actualizado en tiempo real a partir de las actas cargadas por las instituciones participantes.</footer>
 
-<div class="version">v1.23</div>
+<div class="version">v1.24</div>
 
 <script>
   let desgloseVisible = false;
@@ -224,14 +224,14 @@
     try {
       const resp = await fetch('/api/desglose');
       const datos = await resp.json();
-      const inst = datos.instituciones;
+      const inst = datos.provincias;
       if (!inst || inst.length === 0) {
         document.getElementById('tabla-desglose').textContent = 'Todavía no hay firmas registradas.';
         return;
       }
-      let html = '<table><tr><th>Institución</th><th>Firmas</th></tr>';
+      let html = '<table><tr><th>Provincia</th><th>Firmas</th></tr>';
       for (const i of inst) {
-        const nombre = i.nombre_institucion || i.username;
+        const nombre = i.provincia || i.username;
         html += `<tr><td>${nombre}</td><td class="subtotal-inst">${Number(i.total).toLocaleString('es-AR')}</td></tr>`;
       }
       html += '</table>';

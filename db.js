@@ -23,6 +23,7 @@ async function inicializar() {
 
   try { await db.execute("ALTER TABLE administradores ADD COLUMN password_visible TEXT"); } catch (e) {}
   try { await db.execute("ALTER TABLE administradores ADD COLUMN nombre_institucion TEXT"); } catch (e) {}
+  try { await db.execute("ALTER TABLE administradores ADD COLUMN provincia TEXT"); } catch (e) {}
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS actas (

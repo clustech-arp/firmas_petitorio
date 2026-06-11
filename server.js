@@ -46,14 +46,14 @@ app.get('/api/total', async (req, res) => {
 app.get('/api/desglose', async (req, res) => {
   try {
     const resultado = await db.execute(`
-      SELECT a.nombre_institucion, a.username, COALESCE(SUM(ac.cantidad_firmantes), 0) AS total
+      SELECT a.provincia, a.username, COALESCE(SUM(ac.cantidad_firmantes), 0) AS total
       FROM administradores a
       LEFT JOIN actas ac ON ac.admin_id = a.id
       WHERE a.rol = 'usuario'
-      GROUP BY a.id
+      GROUP BY a.provincia
       ORDER BY total DESC
     `);
-    res.json({ instituciones: resultado.rows });
+    res.json({ provincias: resultado.rows });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Error al obtener el desglose' }); }
 });
 
@@ -103,6 +103,36 @@ app.post('/api/actas', requiereAuth, async (req, res) => {
   }
 });
 
+// Carga masiva de actas
+app.post('/api/actas/bulk', requiereAuth, async (req, res) => {
+  const { actas } = req.body || {};
+  if (!Array.isArray(actas) || actas.length === 0)
+    return res.status(400).json({ error: 'Se esperaba un array de actas' });
+
+  const resultados = [];
+  for (const item of actas) {
+    const numero = normalizarNumeroActa(String(item.numero_acta || '').trim());
+    const cantidad = parseInt(item.cantidad_firmantes, 10);
+    if (!numero || !Number.isInteger(cantidad) || cantidad <= 0) {
+      resultados.push({ numero_acta: numero || '?', ok: false, error: 'Datos inválidos' });
+      continue;
+    }
+    try {
+      await db.execute({
+        sql: 'INSERT INTO actas (admin_id, numero_acta, cantidad_firmantes) VALUES (?, ?, ?)',
+        args: [req.admin.id, numero, cantidad]
+      });
+      resultados.push({ numero_acta: numero, cantidad_firmantes: cantidad, ok: true });
+    } catch (e) {
+      const msg = String(e.message || e).includes('UNIQUE')
+        ? `Acta N° ${numero} ya estaba cargada`
+        : 'Error al guardar';
+      resultados.push({ numero_acta: numero, cantidad_firmantes: cantidad, ok: false, error: msg });
+    }
+  }
+  res.json({ resultados });
+});
+
 app.get('/api/actas', requiereAuth, async (req, res) => {
   try {
     const resultado = await db.execute({
@@ -117,13 +147,13 @@ app.get('/api/actas', requiereAuth, async (req, res) => {
 // ---------- Rutas de administrador ----------
 
 app.post('/api/administradores', requiereAuth, requiereAdministrador, async (req, res) => {
-  const { username, password, nombre_institucion } = req.body || {};
+  const { username, password, nombre_institucion, provincia } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: 'Usuario y clave son obligatorios' });
   try {
     const hash = bcrypt.hashSync(password, 10);
     await db.execute({
-      sql: "INSERT INTO administradores (username, password_hash, password_visible, nombre_institucion, rol) VALUES (?, ?, ?, ?, 'usuario')",
-      args: [username, hash, password, nombre_institucion || null]
+      sql: "INSERT INTO administradores (username, password_hash, password_visible, nombre_institucion, provincia, rol) VALUES (?, ?, ?, ?, ?, 'usuario')",
+      args: [username, hash, password, nombre_institucion || null, provincia || null]
     });
     res.status(201).json({ ok: true });
   } catch (e) {
@@ -135,7 +165,7 @@ app.post('/api/administradores', requiereAuth, requiereAdministrador, async (req
 app.get('/api/usuarios', requiereAuth, requiereAdministrador, async (req, res) => {
   try {
     const resultado = await db.execute(
-      "SELECT username, nombre_institucion, password_visible, creado_en FROM administradores WHERE rol = 'usuario' ORDER BY creado_en ASC"
+      "SELECT username, nombre_institucion, provincia, password_visible, creado_en FROM administradores WHERE rol = 'usuario' ORDER BY creado_en ASC"
     );
     res.json({ usuarios: resultado.rows });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Error al obtener los usuarios' }); }
@@ -144,7 +174,7 @@ app.get('/api/usuarios', requiereAuth, requiereAdministrador, async (req, res) =
 app.get('/api/admin/actas', requiereAuth, requiereAdministrador, async (req, res) => {
   try {
     const resultado = await db.execute(`
-      SELECT a.username, a.nombre_institucion, ac.numero_acta, ac.cantidad_firmantes, ac.creado_en
+      SELECT a.username, a.nombre_institucion, a.provincia, ac.numero_acta, ac.cantidad_firmantes, ac.creado_en
       FROM actas ac
       JOIN administradores a ON a.id = ac.admin_id
       ORDER BY a.username ASC, ac.creado_en DESC

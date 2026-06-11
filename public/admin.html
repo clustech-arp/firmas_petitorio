@@ -4,18 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Panel · Un Millón de Firmas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  :root { --azul: #1d3557; --celeste: #457b9d; --claro: #f1faee; --acento: #e63946; --verde: #2a9d8f; }
+  :root { --azul: #1d3557; --celeste: #457b9d; --claro: #f1faee; --acento: #e63946; --verde: #2a9d8f; --violeta: #6B2D91; }
   * { box-sizing: border-box; }
   body { margin:0; font-family:'Segoe UI', Roboto, Arial, sans-serif; background: var(--claro); color: var(--azul); }
   header { background: var(--azul); color:white; padding:22px 16px; text-align:center; }
   header h1 { margin:0; font-size:1.4rem; }
-  main { max-width: 640px; margin: 0 auto; padding: 28px 16px 60px; }
+  main { max-width: 680px; margin: 0 auto; padding: 28px 16px 60px; }
   .panel { background:white; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); padding:26px; margin-bottom:24px; }
   .panel h2 { margin-top:0; font-size:1.15rem; }
   .panel h3 { font-size:1rem; margin:24px 0 6px; color: var(--azul); border-top:1px solid #eee; padding-top:20px; }
   label { display:block; font-weight:600; margin:14px 0 6px; }
-  input { width:100%; padding:10px 12px; border:1px solid #ccc; border-radius:8px; font-size:1rem; }
+  input[type=text], input[type=password], input[type=number] { width:100%; padding:10px 12px; border:1px solid #ccc; border-radius:8px; font-size:1rem; }
   button { margin-top:18px; background: var(--celeste); color:white; border:none; padding:12px 22px; border-radius:8px; font-weight:700; cursor:pointer; font-size:1rem; }
   button:hover { background: var(--azul); }
   button.secundario { background: var(--verde); }
@@ -33,6 +34,40 @@
   .subtotal { margin-top:10px; font-weight:700; color: var(--azul); }
   .clave-modificada { color: #aaa; font-style: italic; }
   .total-actas { margin-top:10px; font-weight:700; color: var(--azul); font-size:0.95rem; }
+
+  /* Tabs */
+  .tabs { display:flex; gap:8px; margin-bottom:18px; border-bottom:2px solid #eee; padding-bottom:0; }
+  .tab-btn { background:none; border:none; border-bottom:3px solid transparent; padding:8px 16px; margin-top:0; font-weight:700; font-size:0.95rem; color:#888; cursor:pointer; border-radius:0; margin-bottom:-2px; }
+  .tab-btn.activo { color: var(--violeta); border-bottom-color: var(--violeta); }
+  .tab-btn:hover { color: var(--violeta); background:none; }
+
+  /* Filas de acta manual */
+  .acta-row { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px; }
+  .acta-row input { margin:0; }
+  .acta-row-label { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .acta-row-label span { font-weight:600; font-size:0.9rem; color: var(--azul); }
+
+  /* Dropzone */
+  .dropzone {
+    border:2px dashed var(--celeste);
+    border-radius:10px;
+    padding:32px 20px;
+    text-align:center;
+    color: var(--celeste);
+    font-weight:600;
+    cursor:pointer;
+    transition: background 0.2s;
+    position:relative;
+  }
+  .dropzone:hover, .dropzone.drag-over { background:#e8f4fd; }
+  .dropzone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+  .dropzone .icono { font-size:2rem; display:block; margin-bottom:8px; }
+
+  /* Tabla preview */
+  .preview-wrap { margin-top:16px; }
+  .preview-wrap h3 { margin:0 0 8px; font-size:1rem; color: var(--azul); border:none; padding:0; }
+  .resultado-ok { color: #1b4332; font-weight:700; }
+  .resultado-error { color: #9d0208; font-weight:700; }
 </style>
 </head>
 <body>
@@ -67,15 +102,47 @@
         <button class="salir" onclick="cerrarSesion()">Cerrar sesión</button>
       </section>
 
-      <!-- Solo para usuarios (rol: usuario) -->
+      <!-- Solo para usuarios -->
       <section class="panel oculto" id="panel-usuario">
-        <h2>Cargar acta</h2>
-        <p style="font-size:0.9rem; color:var(--celeste);">No podés repetir un número de acta que ya cargaste, pero otros usuarios sí pueden usar el mismo número.</p>
-        <label for="acta-numero">Número de acta</label>
-        <input id="acta-numero" type="text" placeholder="Ej: 001/2026">
-        <label for="acta-cantidad">Cantidad de firmantes</label>
-        <input id="acta-cantidad" type="number" min="1" step="1" placeholder="Ej: 35">
-        <button onclick="cargarActa()">Guardar acta</button>
+        <h2>Cargar actas</h2>
+        <p style="font-size:0.9rem; color:var(--celeste); margin-bottom:18px;">No podés repetir un número de acta ya cargado.</p>
+
+        <div class="tabs">
+          <button class="tab-btn activo" onclick="mostrarTab('manual')">✏️ Carga manual</button>
+          <button class="tab-btn" onclick="mostrarTab('excel')">📊 Desde Excel</button>
+        </div>
+
+        <!-- Tab manual: 5 filas -->
+        <div id="tab-manual">
+          <div class="acta-row-label">
+            <span>N° de acta</span>
+            <span>Cantidad de firmantes</span>
+          </div>
+          <div id="filas-actas"></div>
+          <button onclick="cargarActasManual()">Guardar actas</button>
+        </div>
+
+        <!-- Tab Excel -->
+        <div id="tab-excel" class="oculto">
+          <label>Arrastrá el archivo Excel o hacé click para seleccionarlo:</label>
+          <div class="dropzone" id="dropzone" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="onDrop(event)">
+            <span class="icono">📂</span>
+            Arrastrá el Excel acá o hacé click
+            <input type="file" accept=".xlsx,.xls" onchange="procesarExcel(this.files[0])">
+          </div>
+
+          <div class="preview-wrap oculto" id="preview-excel">
+            <h3 id="preview-titulo"></h3>
+            <div id="preview-tabla"></div>
+            <button class="secundario" onclick="confirmarCargaExcel()">✅ Confirmar y cargar</button>
+          </div>
+
+          <div class="preview-wrap oculto" id="resultado-excel">
+            <h3>Resultado de la carga:</h3>
+            <div id="resultado-tabla"></div>
+          </div>
+        </div>
+
         <div class="mensaje" id="acta-mensaje"></div>
       </section>
 
@@ -85,7 +152,7 @@
         <div class="subtotal" id="subtotal"></div>
       </section>
 
-      <!-- Solo para administradores (rol: administrador) -->
+      <!-- Solo para administradores -->
       <section class="panel oculto" id="panel-administrador">
 
         <h2>Crear nuevo usuario</h2>
@@ -95,6 +162,8 @@
         <input id="nuevo-clave" type="password">
         <label for="nuevo-institucion">Nombre institucional</label>
         <input id="nuevo-institucion" type="text" placeholder="Ej: Universidad Nacional de Córdoba">
+        <label for="nuevo-provincia">Provincia</label>
+        <input id="nuevo-provincia" type="text" placeholder="Ej: Córdoba">
         <button class="secundario" onclick="crearUsuario()">Crear cuenta</button>
         <div class="mensaje" id="crear-mensaje"></div>
 
@@ -113,7 +182,7 @@
 
       </section>
 
-      <!-- Cambiar contraseña (al final, visible para todos) -->
+      <!-- Cambiar contraseña -->
       <section class="panel">
         <h2>Cambiar contraseña</h2>
         <label for="clave-actual">Clave actual</label>
@@ -129,12 +198,13 @@
     </div>
   </main>
 
-<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.11</div>
+<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.20</div>
 
 <script>
   const TOKEN_KEY = 'firmas_token';
   const DATOS_KEY = 'firmas_datos';
   let _todasLasActas = [];
+  let _actasExcel = [];
 
   function guardarSesion(token, username, rol) {
     localStorage.setItem(TOKEN_KEY, token);
@@ -156,6 +226,17 @@
     el.className = 'mensaje ' + tipo;
   }
 
+  // ── Tabs ──
+  function mostrarTab(nombre) {
+    document.getElementById('tab-manual').classList.toggle('oculto', nombre !== 'manual');
+    document.getElementById('tab-excel').classList.toggle('oculto', nombre !== 'excel');
+    document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+      btn.classList.toggle('activo', (nombre === 'manual' && i === 0) || (nombre === 'excel' && i === 1));
+    });
+    document.getElementById('acta-mensaje').className = 'mensaje';
+  }
+
+  // ── Iniciar sesión ──
   async function iniciarSesion() {
     const username = document.getElementById('login-usuario').value.trim();
     const password = document.getElementById('login-clave').value;
@@ -166,7 +247,7 @@
       const resp = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, nombre_institucion: document.getElementById('nuevo-institucion').value.trim() })
+        body: JSON.stringify({ username, password })
       });
       const datos = await resp.json();
       if (!resp.ok) { mostrarMensaje('login-mensaje', datos.error || 'No se pudo iniciar sesión.', 'error'); return; }
@@ -177,6 +258,7 @@
     }
   }
 
+  // ── Cambiar clave ──
   async function cambiarClave() {
     const password_actual = document.getElementById('clave-actual').value;
     const password_nueva = document.getElementById('clave-nueva').value;
@@ -205,20 +287,139 @@
     }
   }
 
-  async function cargarActa() {
-    const numero_acta = document.getElementById('acta-numero').value.trim();
-    const cantidad_firmantes = parseInt(document.getElementById('acta-cantidad').value, 10);
+  // ── Carga manual (5 filas) ──
+  function generarFilasActas() {
+    const cont = document.getElementById('filas-actas');
+    cont.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+      const div = document.createElement('div');
+      div.className = 'acta-row';
+      div.innerHTML = `
+        <input type="text" id="acta-num-${i}" placeholder="Ej: ${i + 1}">
+        <input type="number" id="acta-cant-${i}" min="1" step="1" placeholder="Ej: 35">
+      `;
+      cont.appendChild(div);
+    }
+  }
+
+  async function cargarActasManual() {
+    const actas = [];
+    for (let i = 0; i < 5; i++) {
+      const num = document.getElementById(`acta-num-${i}`).value.trim();
+      const cant = document.getElementById(`acta-cant-${i}`).value.trim();
+      if (num && cant) actas.push({ numero_acta: num, cantidad_firmantes: parseInt(cant, 10) });
+    }
+    if (actas.length === 0) {
+      mostrarMensaje('acta-mensaje', 'Completá al menos una fila con número y cantidad.', 'error'); return;
+    }
+    await enviarActasBulk(actas);
+  }
+
+  // ── Carga Excel ──
+  function onDrop(e) {
+    e.preventDefault();
+    document.getElementById('dropzone').classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) procesarExcel(file);
+  }
+
+  function procesarExcel(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+
+      // Buscar fila de encabezados (ACTA / FIRMAS)
+      let headerRow = -1;
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows[i];
+        if (r && String(r[0] || '').toUpperCase().trim() === 'ACTA' &&
+            String(r[1] || '').toUpperCase().trim() === 'FIRMAS') {
+          headerRow = i;
+          break;
+        }
+      }
+      if (headerRow === -1) {
+        mostrarMensaje('acta-mensaje', 'No se encontró la fila de encabezados ACTA / FIRMAS en el Excel.', 'error');
+        return;
+      }
+
+      // Leer datos: filtrar filas con FIRMAS vacío o cero
+      _actasExcel = [];
+      for (let i = headerRow + 1; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r) continue;
+        const num = r[0];
+        const cant = r[1];
+        if (num === null || num === undefined || num === '') continue;
+        if (cant === null || cant === undefined || cant === '' || Number(cant) <= 0) continue;
+        _actasExcel.push({ numero_acta: String(num), cantidad_firmantes: Number(cant) });
+      }
+
+      if (_actasExcel.length === 0) {
+        mostrarMensaje('acta-mensaje', 'El Excel no tiene filas con datos completos (FIRMAS vacío en todas).', 'error');
+        return;
+      }
+
+      // Mostrar preview
+      document.getElementById('preview-titulo').textContent =
+        `Se encontraron ${_actasExcel.length} acta(s) con firmas. Verificá antes de confirmar:`;
+      let html = '<table><tr><th>N° de acta</th><th>Firmantes</th></tr>';
+      for (const a of _actasExcel) {
+        html += `<tr><td>${a.numero_acta}</td><td>${a.cantidad_firmantes}</td></tr>`;
+      }
+      html += '</table>';
+      document.getElementById('preview-tabla').innerHTML = html;
+      document.getElementById('preview-excel').classList.remove('oculto');
+      document.getElementById('resultado-excel').classList.add('oculto');
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  async function confirmarCargaExcel() {
+    if (_actasExcel.length === 0) return;
+    await enviarActasBulk(_actasExcel, true);
+  }
+
+  // ── Envío bulk ──
+  async function enviarActasBulk(actas, esExcel = false) {
     try {
-      const resp = await fetch('/api/actas', {
+      const resp = await fetch('/api/actas/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + obtenerToken() },
-        body: JSON.stringify({ numero_acta, cantidad_firmantes })
+        body: JSON.stringify({ actas })
       });
       const datos = await resp.json();
-      if (!resp.ok) { mostrarMensaje('acta-mensaje', datos.error || 'No se pudo guardar el acta.', 'error'); return; }
-      mostrarMensaje('acta-mensaje', 'Acta guardada correctamente.', 'ok');
-      document.getElementById('acta-numero').value = '';
-      document.getElementById('acta-cantidad').value = '';
+      if (!resp.ok) { mostrarMensaje('acta-mensaje', datos.error || 'Error al cargar.', 'error'); return; }
+
+      const ok = datos.resultados.filter(r => r.ok).length;
+      const errores = datos.resultados.filter(r => !r.ok).length;
+
+      if (esExcel) {
+        // Mostrar tabla de resultados
+        let html = '<table><tr><th>N° de acta</th><th>Firmantes</th><th>Estado</th></tr>';
+        for (const r of datos.resultados) {
+          const estado = r.ok
+            ? '<span class="resultado-ok">✅ Guardada</span>'
+            : `<span class="resultado-error">❌ ${r.error}</span>`;
+          html += `<tr><td>${r.numero_acta}</td><td>${r.cantidad_firmantes || '-'}</td><td>${estado}</td></tr>`;
+        }
+        html += '</table>';
+        document.getElementById('resultado-tabla').innerHTML = html;
+        document.getElementById('resultado-excel').classList.remove('oculto');
+        document.getElementById('preview-excel').classList.add('oculto');
+        _actasExcel = [];
+      } else {
+        // Mensaje resumen en carga manual
+        const msg = errores === 0
+          ? `${ok} acta(s) guardada(s) correctamente.`
+          : `${ok} guardada(s), ${errores} con error (actas duplicadas o datos inválidos).`;
+        mostrarMensaje('acta-mensaje', msg, errores === 0 ? 'ok' : 'error');
+        generarFilasActas();
+      }
       cargarListaActas();
     } catch (e) {
       mostrarMensaje('acta-mensaje', 'Error de conexión con el servidor.', 'error');
@@ -246,6 +447,7 @@
     }
   }
 
+  // ── Crear usuario ──
   async function crearUsuario() {
     const username = document.getElementById('nuevo-usuario').value.trim();
     const password = document.getElementById('nuevo-clave').value;
@@ -256,7 +458,12 @@
       const resp = await fetch('/api/administradores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + obtenerToken() },
-        body: JSON.stringify({ username, password, nombre_institucion: document.getElementById('nuevo-institucion').value.trim() })
+        body: JSON.stringify({
+          username,
+          password,
+          nombre_institucion: document.getElementById('nuevo-institucion').value.trim(),
+          provincia: document.getElementById('nuevo-provincia').value.trim()
+        })
       });
       const datos = await resp.json();
       if (!resp.ok) { mostrarMensaje('crear-mensaje', datos.error || 'No se pudo crear la cuenta.', 'error'); return; }
@@ -264,6 +471,7 @@
       document.getElementById('nuevo-usuario').value = '';
       document.getElementById('nuevo-clave').value = '';
       document.getElementById('nuevo-institucion').value = '';
+      document.getElementById('nuevo-provincia').value = '';
       cargarListaUsuarios();
     } catch (e) {
       mostrarMensaje('crear-mensaje', 'Error de conexión con el servidor.', 'error');
@@ -278,13 +486,14 @@
       if (datos.usuarios.length === 0) {
         document.getElementById('lista-usuarios').textContent = 'Todavía no hay usuarios registrados.';
       } else {
-        let html = '<table><tr><th>Usuario</th><th>Institución</th><th>Clave</th></tr>';
+        let html = '<table><tr><th>Usuario</th><th>Institución</th><th>Provincia</th><th>Clave</th></tr>';
         for (const u of datos.usuarios) {
           const clave = u.password_visible
             ? u.password_visible
             : '<span class="clave-modificada">modificada por el usuario</span>';
-          const inst = u.nombre_institucion || '<span class="clave-modificada">sin nombre</span>';
-          html += `<tr><td>${u.username}</td><td>${inst}</td><td>${clave}</td></tr>`;
+          const inst = u.nombre_institucion || '<span class="clave-modificada">-</span>';
+          const prov = u.provincia || '<span class="clave-modificada">-</span>';
+          html += `<tr><td>${u.username}</td><td>${inst}</td><td>${prov}</td><td>${clave}</td></tr>`;
         }
         html += '</table>';
         document.getElementById('lista-usuarios').innerHTML = html;
@@ -300,7 +509,6 @@
       const datos = await resp.json();
       if (!resp.ok) { document.getElementById('lista-todas-actas').textContent = 'No se pudo cargar.'; return; }
       _todasLasActas = datos.actas;
-      // Poblar filtro con usuarios unicos
       const sel = document.getElementById('filtro-usuario');
       const usuariosUnicos = [...new Set(datos.actas.map(a => a.username))].sort();
       sel.innerHTML = '<option value="">Todos los usuarios</option>';
@@ -323,11 +531,11 @@
       document.getElementById('total-todas-actas').textContent = '';
       return;
     }
-    let html = '<table><tr><th>Usuario</th><th>N° de acta</th><th>Firmantes</th><th>Fecha</th></tr>';
+    let html = '<table><tr><th>Usuario</th><th>Provincia</th><th>N° de acta</th><th>Firmantes</th><th>Fecha</th></tr>';
     let total = 0;
     for (const a of actas) {
       total += Number(a.cantidad_firmantes);
-      html += `<tr><td>${a.username}</td><td>${a.numero_acta}</td><td>${a.cantidad_firmantes}</td><td>${a.creado_en}</td></tr>`;
+      html += `<tr><td>${a.username}</td><td>${a.provincia || '-'}</td><td>${a.numero_acta}</td><td>${a.cantidad_firmantes}</td><td>${a.creado_en}</td></tr>`;
     }
     html += '</table>';
     document.getElementById('lista-todas-actas').innerHTML = html;
@@ -337,9 +545,9 @@
 
   function exportarCSV() {
     if (_todasLasActas.length === 0) { alert('No hay actas para exportar.'); return; }
-    const encabezado = 'Usuario,N° de acta,Firmantes,Fecha';
+    const encabezado = 'Usuario,Provincia,N° de acta,Firmantes,Fecha';
     const filas = _todasLasActas.map(a =>
-      `${a.username},${a.numero_acta},${a.cantidad_firmantes},"${a.creado_en}"`
+      `${a.username},${a.provincia || ''},${a.numero_acta},${a.cantidad_firmantes},"${a.creado_en}"`
     );
     const csv = '﻿' + [encabezado, ...filas].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -364,6 +572,7 @@
       if (datosUsuario.rol === 'usuario') {
         document.getElementById('panel-usuario').classList.remove('oculto');
         document.getElementById('panel-mis-actas').classList.remove('oculto');
+        generarFilasActas();
         cargarListaActas();
       } else if (datosUsuario.rol === 'administrador') {
         document.getElementById('panel-administrador').classList.remove('oculto');
