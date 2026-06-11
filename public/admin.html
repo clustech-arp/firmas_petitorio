@@ -126,8 +126,8 @@
             <input type="number" id="rango-hasta" min="1" step="1" placeholder="Ej: 20">
           </div>
           <div>
-            <label for="rango-firmantes">Firmantes por acta</label>
-            <input type="number" id="rango-firmantes" min="1" step="1" placeholder="Ej: 35">
+            <label for="rango-firmantes">Total de firmantes del rango</label>
+            <input type="number" id="rango-firmantes" min="1" step="1" placeholder="Ej: 100">
           </div>
         </div>
         <button onclick="cargarActasRango()">Guardar rango de actas</button>
@@ -212,7 +212,7 @@
   </div>
 </main>
 
-<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.30</div>
+<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.32</div>
 
 <script>
   const TOKEN_KEY = 'firmas_token';
@@ -291,16 +291,41 @@
   }
 
   // ── Carga por rango ──
+  function parsearRango(s) {
+    const n=parseInt(s,10);
+    if(!isNaN(n)&&String(n)===String(s).trim()) return {desde:n,hasta:n};
+    const m=String(s).match(/^(\d+)\s*-\s*(\d+)$/);
+    if(m) return {desde:parseInt(m[1],10),hasta:parseInt(m[2],10)};
+    return null;
+  }
+  function rangosSolapan(a1,a2,b1,b2){ return a1<=b2&&b1<=a2; }
+
   async function cargarActasRango() {
     const desde=parseInt(document.getElementById('rango-desde').value,10);
     const hasta=parseInt(document.getElementById('rango-hasta').value,10);
-    const firmantes=parseInt(document.getElementById('rango-firmantes').value,10);
-    if(!desde||!hasta||!firmantes){ mostrarMensaje('acta-mensaje','Completá todos los campos del rango.','error'); return; }
+    const total_firmantes=parseInt(document.getElementById('rango-firmantes').value,10);
+    if(!desde||!hasta||!total_firmantes){ mostrarMensaje('acta-mensaje','Completá todos los campos del rango.','error'); return; }
     if(desde>hasta){ mostrarMensaje('acta-mensaje','"Desde" debe ser menor o igual a "Hasta".','error'); return; }
-    if(hasta-desde>199){ mostrarMensaje('acta-mensaje','El rango no puede superar 200 actas.','error'); return; }
-    const actas=[];
-    for(let i=desde;i<=hasta;i++) actas.push({numero_acta:String(i),cantidad_firmantes:firmantes});
-    await enviarActasBulk(actas);
+    if(hasta-desde>999){ mostrarMensaje('acta-mensaje','El rango no puede superar 1000 actas.','error'); return; }
+    // Chequear solapamiento con actas ya cargadas
+    try {
+      const resp=await fetch('/api/actas',{headers:{'Authorization':'Bearer '+obtenerToken()}});
+      const datos=await resp.json();
+      if(resp.ok){
+        const pisados=[];
+        for(const a of datos.actas){
+          const r=parsearRango(a.numero_acta);
+          if(r&&rangosSolapan(desde,hasta,r.desde,r.hasta)) pisados.push(a.numero_acta);
+        }
+        if(pisados.length>0){
+          mostrarMensaje('acta-mensaje',`El rango se pisa con actas ya cargadas: "${pisados.join('", "')}". Ajustá el rango.`,'error');
+          return;
+        }
+      }
+    } catch(e){}
+    // Guardar como una sola acta con rango como identificador
+    const numero_acta=desde===hasta?String(desde):`${desde}-${hasta}`;
+    await enviarActasBulk([{numero_acta,cantidad_firmantes:total_firmantes}]);
   }
 
   // ── Excel ──
