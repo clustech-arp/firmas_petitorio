@@ -186,6 +186,22 @@ app.get('/api/usuarios', requiereAuth, requiereAdministrador, async (req, res) =
   } catch (e) { console.error(e); res.status(500).json({ error: 'Error al obtener los usuarios' }); }
 });
 
+
+app.put('/api/usuarios/:username/password', requiereAuth, requiereAdministrador, async (req, res) => {
+  const { password_nueva } = req.body || {};
+  const { username } = req.params;
+  if (!password_nueva || password_nueva.length < 4)
+    return res.status(400).json({ error: 'La clave debe tener al menos 4 caracteres' });
+  try {
+    const hash = bcrypt.hashSync(password_nueva, 10);
+    await db.execute({
+      sql: 'UPDATE administradores SET password_hash = ?, password_visible = ? WHERE username = ? AND rol = ?',
+      args: [hash, password_nueva, username, 'usuario']
+    });
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Error al resetear la clave' }); }
+});
+
 app.get('/api/admin/actas', requiereAuth, requiereAdministrador, async (req, res) => {
   try {
     const resultado = await db.execute(`

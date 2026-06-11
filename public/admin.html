@@ -208,7 +208,7 @@
   </div>
 </main>
 
-<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.33</div>
+<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.34</div>
 
 <script>
   const TOKEN_KEY = 'firmas_token';
@@ -422,6 +422,24 @@
   }
 
   // ── Crear usuario ──
+
+  async function resetearClave(username) {
+    const nueva = prompt(`Nueva clave para "${username}":`);
+    if (!nueva) return;
+    if (nueva.length < 4) { alert('La clave debe tener al menos 4 caracteres.'); return; }
+    try {
+      const resp = await fetch(`/api/usuarios/${encodeURIComponent(username)}/password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + obtenerToken() },
+        body: JSON.stringify({ password_nueva: nueva })
+      });
+      const datos = await resp.json();
+      if (!resp.ok) { alert(datos.error || 'No se pudo resetear la clave.'); return; }
+      alert(`Clave de "${username}" actualizada a: ${nueva}`);
+      cargarListaUsuarios();
+    } catch(e) { alert('Error de conexión.'); }
+  }
+
   async function crearUsuario(){
     const username=document.getElementById('nuevo-usuario').value.trim();
     const password=document.getElementById('nuevo-clave').value;
@@ -454,13 +472,13 @@
       if(datos.usuarios.length===0){
         document.getElementById('lista-usuarios').textContent='Todavía no hay usuarios registrados.';
       } else {
-        let html='<table><tr><th>Usuario</th><th>Institución</th><th>Provincia</th><th>Contacto</th><th>Clave</th></tr>';
+        let html='<table><tr><th>Usuario</th><th>Institución</th><th>Provincia</th><th>Contacto</th><th>Clave</th><th></th></tr>';
         for(const u of datos.usuarios){
           const clave=u.password_visible?u.password_visible:'<span class="clave-modificada">modificada</span>';
           const inst=u.nombre_institucion||'<span class="clave-modificada">-</span>';
           const prov=u.provincia||'<span class="clave-modificada">-</span>';
           const cont=u.contacto||'<span class="clave-modificada">-</span>';
-          html+=`<tr><td>${u.username}</td><td>${inst}</td><td>${prov}</td><td>${cont}</td><td>${clave}</td></tr>`;
+          html+=`<tr><td>${u.username}</td><td>${inst}</td><td>${prov}</td><td>${cont}</td><td>${clave}</td><td><button onclick="resetearClave('${u.username}')" style="margin:0;padding:5px 10px;font-size:0.8rem;background:#e76f51;">Resetear</button></td></tr>`;
         }
         html+='</table>';
         document.getElementById('lista-usuarios').innerHTML=html;
