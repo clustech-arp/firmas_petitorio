@@ -176,7 +176,7 @@
     <div class="meta-texto">de <span id="meta-texto">1.000.000</span> firmas</div>
     <div class="barra-fondo"><div class="barra-relleno" id="barra"></div></div>
     <div class="porcentaje" id="porcentaje">0%</div>
-    <button class="btn-desglose" onclick="toggleDesglose()">▼ Ver desglose por institución</button>
+    <button class="btn-desglose" onclick="toggleDesglose()">▼ Ver desglose por provincias</button>
     <div class="desglose" id="desglose">
       <div id="tabla-desglose">Cargando…</div>
     </div>
@@ -203,7 +203,7 @@
 
   <footer>Conteo actualizado en tiempo real a partir de las actas cargadas por las instituciones participantes.</footer>
 
-<div class="version">v1.25</div>
+<div class="version">v1.27</div>
 
 <script>
   let desgloseVisible = false;
@@ -251,7 +251,7 @@
     const btn = document.querySelector('.btn-desglose');
     desgloseVisible = !desgloseVisible;
     div.style.display = desgloseVisible ? 'block' : 'none';
-    btn.textContent = desgloseVisible ? '▲ Ocultar desglose' : '▼ Ver desglose por institución';
+    btn.textContent = desgloseVisible ? '▲ Ocultar desglose' : '▼ Ver desglose por provincias';
     if (desgloseVisible && !desglosesCargado) {
       cargarDesglose();
       desglosesCargado = true;
@@ -269,7 +269,12 @@
       }
       let html = '';
       for (const c of datos.contactos) {
-        html += `<div class="contacto-item"><span class="contacto-prov">${c.provincia}</span><span>${c.contacto}</span></div>`;
+        const digitos = c.contacto.replace(/\D/g,'');
+        const waNum = digitos.startsWith('549') ? digitos : '549' + digitos;
+        const waLink = digitos.length >= 8
+          ? `<a href="https://wa.me/${waNum}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#25D366;color:white;padding:4px 12px;border-radius:999px;text-decoration:none;font-size:0.82rem;font-weight:700;margin-left:8px;">📱 WhatsApp</a>`
+          : `<span>${c.contacto}</span>`;
+        html += `<div class="contacto-item"><span class="contacto-prov">${c.provincia}</span>${waLink}</div>`;
       }
       cont.innerHTML = html;
     } catch (e) {
