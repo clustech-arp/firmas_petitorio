@@ -208,7 +208,7 @@
   </div>
 </main>
 
-<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.34</div>
+<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.35</div>
 
 <script>
   const TOKEN_KEY = 'firmas_token';
@@ -372,6 +372,29 @@
 
   // ── Envío bulk ──
   async function enviarActasBulk(actas,esExcel=false){
+    // Pre-validación: chequear que actas individuales no caigan dentro de rangos ya cargados
+    try {
+      const rActas=await fetch('/api/actas',{headers:{'Authorization':'Bearer '+obtenerToken()}});
+      const dActas=await rActas.json();
+      if(rActas.ok && dActas.actas.length>0){
+        const pisados=[];
+        for(const nuevo of actas){
+          const numNuevo=parseInt(nuevo.numero_acta,10);
+          if(isNaN(numNuevo)) continue;
+          for(const existente of dActas.actas){
+            const r=parsearRango(existente.numero_acta);
+            if(r && r.desde!==r.hasta && rangosSolapan(numNuevo,numNuevo,r.desde,r.hasta)){
+              pisados.push(`N°${numNuevo} cae dentro del rango ya cargado "${existente.numero_acta}"`);
+              break;
+            }
+          }
+        }
+        if(pisados.length>0){
+          mostrarMensaje('acta-mensaje',`Conflicto con actas ya cargadas: ${pisados.join(' / ')}`, 'error');
+          return;
+        }
+      }
+    } catch(e){}
     try {
       const resp=await fetch('/api/actas/bulk',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+obtenerToken()},body:JSON.stringify({actas})});
       const datos=await resp.json();
