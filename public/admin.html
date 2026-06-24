@@ -163,7 +163,15 @@
     <!-- PANEL ADMINISTRADOR -->
     <section class="panel oculto" id="panel-administrador">
 
-      <h2>Crear nuevo usuario</h2>
+      <h2>Configuración de la página pública</h2>
+      <label style="display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer;margin-top:14px;">
+        <input type="checkbox" id="check-mostrar-firmas" onchange="guardarConfiguracion()" style="width:auto;margin:0;">
+        Mostrar cantidad de firmas recolectadas
+      </label>
+      <p style="font-size:0.85rem;color:#888;margin-top:6px;">Si está destildado, en la página pública se va a mostrar una animación de carga en lugar del contador de firmas.</p>
+      <div class="mensaje" id="config-mensaje"></div>
+
+      <h2 style="margin-top:24px;border-top:1px solid #eee;padding-top:20px;">Crear nuevo usuario</h2>
       <label for="nuevo-usuario">Usuario</label>
       <input id="nuevo-usuario" type="text">
       <label for="nuevo-clave">Clave</label>
@@ -208,7 +216,7 @@
   </div>
 </main>
 
-<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.35</div>
+<div style="position:fixed;bottom:8px;right:12px;font-size:0.75rem;color:#aaa;opacity:0.7;">v1.36</div>
 
 <script>
   const TOKEN_KEY = 'firmas_token';
@@ -444,6 +452,24 @@
     } catch(e){ document.getElementById('lista-actas').textContent='Error de conexión.'; }
   }
 
+  // ── Configuración pública ──
+  async function cargarConfiguracion(){
+    try {
+      const resp=await fetch('/api/configuracion',{headers:{'Authorization':'Bearer '+obtenerToken()}});
+      const datos=await resp.json();
+      if(resp.ok) document.getElementById('check-mostrar-firmas').checked=datos.mostrar_firmas;
+    } catch(e){}
+  }
+  async function guardarConfiguracion(){
+    const mostrar_firmas=document.getElementById('check-mostrar-firmas').checked;
+    try {
+      const resp=await fetch('/api/configuracion',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+obtenerToken()},body:JSON.stringify({mostrar_firmas})});
+      const datos=await resp.json();
+      if(!resp.ok){ mostrarMensaje('config-mensaje',datos.error||'Error.','error'); return; }
+      mostrarMensaje('config-mensaje','Configuración guardada.','ok');
+    } catch(e){ mostrarMensaje('config-mensaje','Error de conexión.','error'); }
+  }
+
   // ── Crear usuario ──
 
   async function resetearClave(username) {
@@ -563,6 +589,7 @@
         cargarListaActas();
       } else if(datosUsuario.rol==='administrador'){
         document.getElementById('panel-administrador').classList.remove('oculto');
+        cargarConfiguracion();
         cargarListaUsuarios();
         cargarTodasLasActas();
       }

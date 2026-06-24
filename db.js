@@ -49,6 +49,11 @@ async function inicializar() {
     await db.execute({ sql: "INSERT INTO configuracion (clave, valor) VALUES ('meta_firmas', '1000000')", args: [] });
   }
 
+  const mostrarFirmas = await db.execute({ sql: "SELECT valor FROM configuracion WHERE clave = 'mostrar_firmas'", args: [] });
+  if (mostrarFirmas.rows.length === 0) {
+    await db.execute({ sql: "INSERT INTO configuracion (clave, valor) VALUES ('mostrar_firmas', '1')", args: [] });
+  }
+
   await db.execute("UPDATE administradores SET rol = 'administrador' WHERE rol = 'superadmin'");
   await db.execute("UPDATE administradores SET rol = 'usuario' WHERE rol = 'admin'");
 

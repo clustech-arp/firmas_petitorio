@@ -171,12 +171,17 @@
 
   <!-- CONTADOR -->
   <div class="seccion-contador">
-    <div class="contador-label">📢 Firmas recolectadas</div>
-    <div class="numero-firmas" id="contador">0</div>
-    <div class="meta-texto">de <span id="meta-texto">1.000.000</span> firmas</div>
-    <div class="barra-fondo"><div class="barra-relleno" id="barra"></div></div>
-    <div class="porcentaje" id="porcentaje">0%</div>
-    <button class="btn-desglose" onclick="toggleDesglose()">▼ Ver desglose por provincias</button>
+    <div id="contador-numerico">
+      <div class="contador-label">📢 Firmas recolectadas</div>
+      <div class="numero-firmas" id="contador">0</div>
+      <div class="meta-texto">de <span id="meta-texto">1.000.000</span> firmas</div>
+      <div class="barra-fondo"><div class="barra-relleno" id="barra"></div></div>
+      <div class="porcentaje" id="porcentaje">0%</div>
+    </div>
+    <div id="contador-gif" style="display:none;">
+      <img src="/cargando.gif" alt="Cargando…" style="max-width:220px;width:80%;">
+    </div>
+    <button class="btn-desglose" id="btn-desglose" onclick="toggleDesglose()">▼ Ver desglose por provincias</button>
     <div class="desglose" id="desglose">
       <div id="tabla-desglose">Cargando…</div>
     </div>
@@ -203,7 +208,7 @@
 
   <footer>Conteo actualizado en tiempo real a partir de las actas cargadas por las instituciones participantes.</footer>
 
-<div class="version">v1.27</div>
+<div class="version">v1.28</div>
 
 <script>
   let desgloseVisible = false;
@@ -217,11 +222,21 @@
       const datos = await resp.json();
       const total = datos.total || 0;
       const meta = datos.meta || 1000000;
-      const porcentaje = Math.min(100, (total / meta) * 100);
-      document.getElementById('contador').textContent = formatearNumero(total);
-      document.getElementById('meta-texto').textContent = formatearNumero(meta);
-      document.getElementById('barra').style.width = porcentaje.toFixed(2) + '%';
-      document.getElementById('porcentaje').textContent = porcentaje.toFixed(1) + '%';
+      const mostrar = datos.mostrar_firmas !== false;
+      document.getElementById('contador-numerico').style.display = mostrar ? '' : 'none';
+      document.getElementById('contador-gif').style.display = mostrar ? 'none' : '';
+      document.getElementById('btn-desglose').style.display = mostrar ? '' : 'none';
+      if (!mostrar) {
+        desgloseVisible = false;
+        document.getElementById('desglose').style.display = 'none';
+      }
+      if (mostrar) {
+        const porcentaje = Math.min(100, (total / meta) * 100);
+        document.getElementById('contador').textContent = formatearNumero(total);
+        document.getElementById('meta-texto').textContent = formatearNumero(meta);
+        document.getElementById('barra').style.width = porcentaje.toFixed(2) + '%';
+        document.getElementById('porcentaje').textContent = porcentaje.toFixed(1) + '%';
+      }
     } catch (e) { console.error('No se pudo actualizar el contador', e); }
   }
 

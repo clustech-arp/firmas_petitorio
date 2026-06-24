@@ -36,7 +36,9 @@ app.get('/api/total', async (req, res) => {
   try {
     const totalRes = await db.execute('SELECT COALESCE(SUM(cantidad_firmantes), 0) AS total FROM actas');
     const metaRes = await db.execute("SELECT valor FROM configuracion WHERE clave = 'meta_firmas'");
-    res.json({ total: Number(totalRes.rows[0].total), meta: parseInt(metaRes.rows[0].valor, 10) });
+    const mostrarRes = await db.execute("SELECT valor FROM configuracion WHERE clave = 'mostrar_firmas'");
+    const mostrar_firmas = mostrarRes.rows.length === 0 || mostrarRes.rows[0].valor === '1';
+    res.json({ total: Number(totalRes.rows[0].total), meta: parseInt(metaRes.rows[0].valor, 10), mostrar_firmas });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Error al obtener el total' }); }
 });
 
@@ -212,6 +214,23 @@ app.get('/api/admin/actas', requiereAuth, requiereAdministrador, async (req, res
     `);
     res.json({ actas: resultado.rows });
   } catch (e) { console.error(e); res.status(500).json({ error: 'Error al obtener las actas' }); }
+});
+
+app.get('/api/configuracion', requiereAuth, requiereAdministrador, async (req, res) => {
+  try {
+    const metaRes = await db.execute("SELECT valor FROM configuracion WHERE clave = 'meta_firmas'");
+    const mostrarRes = await db.execute("SELECT valor FROM configuracion WHERE clave = 'mostrar_firmas'");
+    const mostrar_firmas = mostrarRes.rows.length === 0 || mostrarRes.rows[0].valor === '1';
+    res.json({ meta: parseInt((metaRes.rows[0] && metaRes.rows[0].valor) || '1000000', 10), mostrar_firmas });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Error al obtener la configuracion' }); }
+});
+
+app.put('/api/configuracion', requiereAuth, requiereAdministrador, async (req, res) => {
+  const { mostrar_firmas } = req.body || {};
+  try {
+    await db.execute({ sql: "UPDATE configuracion SET valor = ? WHERE clave = 'mostrar_firmas'", args: [mostrar_firmas ? '1' : '0'] });
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'Error al actualizar la configuracion' }); }
 });
 
 app.put('/api/meta', requiereAuth, requiereAdministrador, async (req, res) => {
