@@ -95,6 +95,10 @@
     color: var(--blanco);
   }
 
+  .seccion-contador.modo-gif {
+    background: #4C2880;
+  }
+
   .contador-label {
     font-size: 0.8rem;
     font-weight: 700;
@@ -209,7 +213,7 @@
 
   <footer>Conteo actualizado en tiempo real a partir de las actas cargadas por las instituciones participantes.</footer>
 
-<div class="version">v1.30</div>
+<div class="version">v1.31</div>
 
 <script>
   let desgloseVisible = false;
@@ -227,6 +231,7 @@
       document.getElementById('contador-numerico').style.display = mostrar ? '' : 'none';
       document.getElementById('contador-gif').style.display = mostrar ? 'none' : '';
       document.getElementById('btn-desglose').style.display = mostrar ? '' : 'none';
+      document.querySelector('.seccion-contador').classList.toggle('modo-gif', !mostrar);
       if (!mostrar) {
         desgloseVisible = false;
         document.getElementById('desglose').style.display = 'none';
